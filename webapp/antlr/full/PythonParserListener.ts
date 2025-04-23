@@ -3,7 +3,7 @@
 import {ParseTreeListener} from "antlr4";
 
 
-import { File_inputContext } from "./PythonParser.js";
+import { ProgramContext } from "./PythonParser.js";
 import { InteractiveContext } from "./PythonParser.js";
 import { EvalContext } from "./PythonParser.js";
 import { Func_typeContext } from "./PythonParser.js";
@@ -207,15 +207,15 @@ import { NameContext } from "./PythonParser.js";
  */
 export default class PythonParserListener extends ParseTreeListener {
 	/**
-	 * Enter a parse tree produced by `PythonParser.file_input`.
+	 * Enter a parse tree produced by `PythonParser.program`.
 	 * @param ctx the parse tree
 	 */
-	enterFile_input?: (ctx: File_inputContext) => void;
+	enterProgram?: (ctx: ProgramContext) => void;
 	/**
-	 * Exit a parse tree produced by `PythonParser.file_input`.
+	 * Exit a parse tree produced by `PythonParser.program`.
 	 * @param ctx the parse tree
 	 */
-	exitFile_input?: (ctx: File_inputContext) => void;
+	exitProgram?: (ctx: ProgramContext) => void;
 	/**
 	 * Enter a parse tree produced by `PythonParser.interactive`.
 	 * @param ctx the parse tree

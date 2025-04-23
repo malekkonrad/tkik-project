@@ -40,7 +40,7 @@ options { tokenVocab=PythonLexer; }
 // STARTING RULES
 // ==============
 
-file_input: statements? EOF;
+program: statements? EOF;
 interactive: statement_newline;
 eval: expressions NEWLINE* EOF;
 func_type: '(' type_expressions? ')' '->' expression NEWLINE* EOF;

@@ -27,7 +27,7 @@ THE SOFTWARE.
  *
  */
 
-import { CharStream, CharStreams, CommonTokenStream, Token, CommonToken, Lexer, TokenStream } from "antlr4";
+import { CharStream, CharStreams, CommonTokenStream, Token, CommonToken, Lexer } from "antlr4";
 import PythonLexer from "./PythonLexer";
 import PythonParser from "./PythonParser";
 import * as Collections from "typescript-collections";

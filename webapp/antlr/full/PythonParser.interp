@@ -209,7 +209,7 @@ EXPLICIT_LINE_JOINING
 ERRORTOKEN
 
 rule names:
-file_input
+program
 interactive
 eval
 func_type

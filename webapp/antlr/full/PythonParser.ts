@@ -120,7 +120,7 @@ export default class PythonParser extends Parser {
 	public static readonly EXPLICIT_LINE_JOINING = 101;
 	public static readonly ERRORTOKEN = 102;
 	public static override readonly EOF = Token.EOF;
-	public static readonly RULE_file_input = 0;
+	public static readonly RULE_program = 0;
 	public static readonly RULE_interactive = 1;
 	public static readonly RULE_eval = 2;
 	public static readonly RULE_func_type = 3;
@@ -435,7 +435,7 @@ export default class PythonParser extends Parser {
                                                              "ERRORTOKEN" ];
 	// tslint:disable:no-trailing-whitespace
 	public static readonly ruleNames: string[] = [
-		"file_input", "interactive", "eval", "func_type", "statements", "statement", 
+		"program", "interactive", "eval", "func_type", "statements", "statement", 
 		"statement_newline", "simple_stmts", "simple_stmt", "compound_stmt", "assignment", 
 		"annotated_rhs", "augassign", "return_stmt", "raise_stmt", "global_stmt", 
 		"nonlocal_stmt", "del_stmt", "yield_stmt", "assert_stmt", "import_stmt", 
@@ -494,9 +494,9 @@ export default class PythonParser extends Parser {
 		this._interp = new ParserATNSimulator(this, PythonParser._ATN, PythonParser.DecisionsToDFA, new PredictionContextCache());
 	}
 	// @RuleVersion(0)
-	public file_input(): File_inputContext {
-		let localctx: File_inputContext = new File_inputContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 0, PythonParser.RULE_file_input);
+	public program(): ProgramContext {
+		let localctx: ProgramContext = new ProgramContext(this, this._ctx, this.state);
+		this.enterRule(localctx, 0, PythonParser.RULE_program);
 		let _la: number;
 		try {
 			this.enterOuterAlt(localctx, 1);
@@ -12131,7 +12131,7 @@ export default class PythonParser extends Parser {
 
 }
 
-export class File_inputContext extends ParserRuleContext {
+export class ProgramContext extends ParserRuleContext {
 	constructor(parser?: PythonParser, parent?: ParserRuleContext, invokingState?: number) {
 		super(parent, invokingState);
     	this.parser = parser;
@@ -12143,16 +12143,16 @@ export class File_inputContext extends ParserRuleContext {
 		return this.getTypedRuleContext(StatementsContext, 0) as StatementsContext;
 	}
     public get ruleIndex(): number {
-    	return PythonParser.RULE_file_input;
+    	return PythonParser.RULE_program;
 	}
 	public enterRule(listener: PythonParserListener): void {
-	    if(listener.enterFile_input) {
-	 		listener.enterFile_input(this);
+	    if(listener.enterProgram) {
+	 		listener.enterProgram(this);
 		}
 	}
 	public exitRule(listener: PythonParserListener): void {
-	    if(listener.exitFile_input) {
-	 		listener.exitFile_input(this);
+	    if(listener.exitProgram) {
+	 		listener.exitProgram(this);
 		}
 	}
 }
