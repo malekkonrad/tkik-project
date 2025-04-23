@@ -7,6 +7,9 @@ import TextField from '@mui/material/TextField'
 import Select, { SelectChangeEvent } from '@mui/material/Select'
 import MenuItem from '@mui/material/MenuItem'
 
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
 import { CharStream, CommonTokenStream } from 'antlr4';
 import FullPythonLexer from '../antlr/full/PythonLexer';
 import FullPythonParser from '../antlr/full/PythonParser';
@@ -69,7 +72,9 @@ export default function Home() {
       </Select><br />
       <TextField variant='outlined' multiline value={code} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCode(e.target.value)} />
       <p>{dTree}</p>
-      <p>{result}</p>
+      <SyntaxHighlighter language="lua" style={dark}>
+        {result}
+      </SyntaxHighlighter>
     </>
   );
 }
