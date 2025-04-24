@@ -52,13 +52,10 @@ jobs:
         env:
           PAGES_BASE_PATH: ${{ steps.setup_pages.outputs.base_path }}
 
-      - name: Move out folder
-        run: mv webapp/out out
-
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./out
+          path: ./webapp/out
 
   deploy:
     environment:
