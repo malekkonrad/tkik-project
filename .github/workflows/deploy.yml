@@ -29,11 +29,8 @@ jobs:
           cache: 'npm'
           cache-dependency-path: webapp/package-lock.json
 
-      - name: Switch directory
-        run: cd webapp
-
       - name: Install dependencies
-        run: npm install
+        run: cd webapp && npm install
 
       - name: Setup Pages
         id: setup_pages
@@ -51,14 +48,14 @@ jobs:
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
 
       - name: Build with Next.js
-        run: npm run build
+        run: cd webapp && npm run build
         env:
           PAGES_BASE_PATH: ${{ steps.setup_pages.outputs.base_path }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./out
+          path: ./webapp/out
 
   deploy:
     environment:
