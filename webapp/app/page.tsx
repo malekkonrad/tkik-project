@@ -33,30 +33,34 @@ export default function Home() {
   const [result, setResult] = React.useState('')
   const [dTree, setDTree] = React.useState('')
   React.useEffect(() => {
-    console.log("Code:", code)
-    const chars = new CharStream(code); // replace this with a FileStream as required
-    console.log("Characters:", chars)
-    const lexerClass = (lexers as any)[version] // eslint-disable-line
-    const parserClass = (parsers as any)[version] // eslint-disable-line
-    const lexer = new lexerClass(chars);
-    console.log("Lexer", lexer);
-    const tokens = new CommonTokenStream(lexer);
-    console.log("Tokens", tokens);
-    const parser = new parserClass(tokens);
-    console.log("Parser", parser);
-    const tree = parser.program();
-    
-    console.log("Tree", tree);
-    console.log(tree.toStringTree(parser.ruleNames));
-    setDTree(tree.toStringTree(parser.ruleNames))
+    try {
+      console.log("Code:", code)
+      const chars = new CharStream(code); // replace this with a FileStream as required
+      console.log("Characters:", chars)
+      const lexerClass = (lexers as any)[version] // eslint-disable-line
+      const parserClass = (parsers as any)[version] // eslint-disable-line
+      const lexer = new lexerClass(chars);
+      console.log("Lexer", lexer);
+      const tokens = new CommonTokenStream(lexer);
+      console.log("Tokens", tokens);
+      const parser = new parserClass(tokens);
+      console.log("Parser", parser);
+      const tree = parser.program();
+      
+      console.log("Tree", tree);
+      console.log(tree.toStringTree(parser.ruleNames));
+      setDTree(tree.toStringTree(parser.ruleNames))
 
-    if (version == 'full') {
-      const luaVisitor = new LuaPythonVisitor()
-      const res = luaVisitor.visit(tree)
-      console.log("Result", res)
-      setResult(res ?? '-- No result')
-    } else {
-      setResult("-- Can only parse full grammar")
+      if (version == 'full') {
+        const luaVisitor = new LuaPythonVisitor()
+        const res = luaVisitor.visit(tree)
+        console.log("Result", res)
+        setResult(res ?? '-- No result')
+      } else {
+        setResult("-- Can only parse full grammar")
+      }
+    } catch {
+      setResult("-- Failed to parse :(")
     }
   }, [ code, version ])
 
