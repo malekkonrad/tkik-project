@@ -28,6 +28,9 @@ jobs:
           node-version: 22
           cache: 'npm'
 
+      - name: Switch directory
+        run: cd webapp
+
       - name: Install dependencies
         run: npm install
 
@@ -39,7 +42,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            .next/cache
+            webapp/.next/cache
           # Generate a new cache whenever packages or source files change.
           key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
           # If source files changed but packages didn't, rebuild from a prior cache.
