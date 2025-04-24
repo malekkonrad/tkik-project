@@ -16,4 +16,5 @@ W celu wiernego odzwierciedlenia składni Pythona pierwotnie zaczęrpnięto gram
 [Parser Antlr 4](webapp/antlr/full/PythonParser.g4)
 
 # Instrukcja obsługi
+Narzędzie jest w trakcie tworzenia. Wersja podglądowa aktualizowana z każdym commitem dostępna jest [pod tym adresem](https://malekkonrad.github.io/tkik-project/).
 !!!TODO!!!
