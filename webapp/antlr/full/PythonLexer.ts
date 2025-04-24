@@ -11,7 +11,7 @@ import {
 	PredictionContextCache,
 	Token
 } from "antlr4";
-import PythonLexerBase from './PythonLexerBase';
+import PythonLexerBase from './PythonLexerBase'; // Avoid .js here!!!
 
 export default class PythonLexer extends PythonLexerBase {
 	public static readonly ENCODING = 1;

@@ -12,6 +12,8 @@ import {
 	Interval, IntervalSet
 } from 'antlr4';
 import PythonParserListener from "./PythonParserListener.js";
+import PythonParserVisitor from "./PythonParserVisitor.js";
+
 // for running tests with parameters, TODO: discuss strategy for typed parameters in CI
 // eslint-disable-next-line no-unused-vars
 type int = number;
@@ -12155,6 +12157,14 @@ export class ProgramContext extends ParserRuleContext {
 	 		listener.exitProgram(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitProgram) {
+			return visitor.visitProgram(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -12177,6 +12187,14 @@ export class InteractiveContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitInteractive) {
 	 		listener.exitInteractive(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitInteractive) {
+			return visitor.visitInteractive(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -12210,6 +12228,14 @@ export class EvalContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitEval) {
 	 		listener.exitEval(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitEval) {
+			return visitor.visitEval(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -12257,6 +12283,14 @@ export class Func_typeContext extends ParserRuleContext {
 	 		listener.exitFunc_type(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitFunc_type) {
+			return visitor.visitFunc_type(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -12284,6 +12318,14 @@ export class StatementsContext extends ParserRuleContext {
 	 		listener.exitStatements(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitStatements) {
+			return visitor.visitStatements(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -12309,6 +12351,14 @@ export class StatementContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitStatement) {
 	 		listener.exitStatement(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitStatement) {
+			return visitor.visitStatement(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -12342,6 +12392,14 @@ export class Statement_newlineContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitStatement_newline) {
 	 		listener.exitStatement_newline(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitStatement_newline) {
+			return visitor.visitStatement_newline(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -12378,6 +12436,14 @@ export class Simple_stmtsContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitSimple_stmts) {
 	 		listener.exitSimple_stmts(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitSimple_stmts) {
+			return visitor.visitSimple_stmts(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -12443,6 +12509,14 @@ export class Simple_stmtContext extends ParserRuleContext {
 	 		listener.exitSimple_stmt(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitSimple_stmt) {
+			return visitor.visitSimple_stmt(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -12486,6 +12560,14 @@ export class Compound_stmtContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitCompound_stmt) {
 	 		listener.exitCompound_stmt(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitCompound_stmt) {
+			return visitor.visitCompound_stmt(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -12557,6 +12639,14 @@ export class AssignmentContext extends ParserRuleContext {
 	 		listener.exitAssignment(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitAssignment) {
+			return visitor.visitAssignment(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -12582,6 +12672,14 @@ export class Annotated_rhsContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitAnnotated_rhs) {
 	 		listener.exitAnnotated_rhs(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitAnnotated_rhs) {
+			return visitor.visitAnnotated_rhs(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -12644,6 +12742,14 @@ export class AugassignContext extends ParserRuleContext {
 	 		listener.exitAugassign(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitAugassign) {
+			return visitor.visitAugassign(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -12669,6 +12775,14 @@ export class Return_stmtContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitReturn_stmt) {
 	 		listener.exitReturn_stmt(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitReturn_stmt) {
+			return visitor.visitReturn_stmt(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -12702,6 +12816,14 @@ export class Raise_stmtContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitRaise_stmt) {
 	 		listener.exitRaise_stmt(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitRaise_stmt) {
+			return visitor.visitRaise_stmt(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -12740,6 +12862,14 @@ export class Global_stmtContext extends ParserRuleContext {
 	 		listener.exitGlobal_stmt(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitGlobal_stmt) {
+			return visitor.visitGlobal_stmt(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -12776,6 +12906,14 @@ export class Nonlocal_stmtContext extends ParserRuleContext {
 	 		listener.exitNonlocal_stmt(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitNonlocal_stmt) {
+			return visitor.visitNonlocal_stmt(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -12803,6 +12941,14 @@ export class Del_stmtContext extends ParserRuleContext {
 	 		listener.exitDel_stmt(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitDel_stmt) {
+			return visitor.visitDel_stmt(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -12825,6 +12971,14 @@ export class Yield_stmtContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitYield_stmt) {
 	 		listener.exitYield_stmt(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitYield_stmt) {
+			return visitor.visitYield_stmt(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -12860,6 +13014,14 @@ export class Assert_stmtContext extends ParserRuleContext {
 	 		listener.exitAssert_stmt(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitAssert_stmt) {
+			return visitor.visitAssert_stmt(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -12887,6 +13049,14 @@ export class Import_stmtContext extends ParserRuleContext {
 	 		listener.exitImport_stmt(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitImport_stmt) {
+			return visitor.visitImport_stmt(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -12912,6 +13082,14 @@ export class Import_nameContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitImport_name) {
 	 		listener.exitImport_name(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitImport_name) {
+			return visitor.visitImport_name(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -12959,6 +13137,14 @@ export class Import_fromContext extends ParserRuleContext {
 	 		listener.exitImport_from(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitImport_from) {
+			return visitor.visitImport_from(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -12995,6 +13181,14 @@ export class Import_from_targetsContext extends ParserRuleContext {
 	 		listener.exitImport_from_targets(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitImport_from_targets) {
+			return visitor.visitImport_from_targets(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -13028,6 +13222,14 @@ export class Import_from_as_namesContext extends ParserRuleContext {
 	 		listener.exitImport_from_as_names(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitImport_from_as_names) {
+			return visitor.visitImport_from_as_names(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -13056,6 +13258,14 @@ export class Import_from_as_nameContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitImport_from_as_name) {
 	 		listener.exitImport_from_as_name(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitImport_from_as_name) {
+			return visitor.visitImport_from_as_name(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -13091,6 +13301,14 @@ export class Dotted_as_namesContext extends ParserRuleContext {
 	 		listener.exitDotted_as_names(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitDotted_as_names) {
+			return visitor.visitDotted_as_names(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -13121,6 +13339,14 @@ export class Dotted_as_nameContext extends ParserRuleContext {
 	 		listener.exitDotted_as_name(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitDotted_as_name) {
+			return visitor.visitDotted_as_name(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -13149,6 +13375,14 @@ export class Dotted_nameContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitDotted_name) {
 	 		listener.exitDotted_name(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitDotted_name) {
+			return visitor.visitDotted_name(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -13185,6 +13419,14 @@ export class BlockContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitBlock) {
 	 		listener.exitBlock(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitBlock) {
+			return visitor.visitBlock(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -13226,6 +13468,14 @@ export class DecoratorsContext extends ParserRuleContext {
 	 		listener.exitDecorators(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitDecorators) {
+			return visitor.visitDecorators(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -13251,6 +13501,14 @@ export class Class_defContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitClass_def) {
 	 		listener.exitClass_def(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitClass_def) {
+			return visitor.visitClass_def(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -13298,6 +13556,14 @@ export class Class_def_rawContext extends ParserRuleContext {
 	 		listener.exitClass_def_raw(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitClass_def_raw) {
+			return visitor.visitClass_def_raw(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -13323,6 +13589,14 @@ export class Function_defContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitFunction_def) {
 	 		listener.exitFunction_def(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitFunction_def) {
+			return visitor.visitFunction_def(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -13382,6 +13656,14 @@ export class Function_def_rawContext extends ParserRuleContext {
 	 		listener.exitFunction_def_raw(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitFunction_def_raw) {
+			return visitor.visitFunction_def_raw(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -13404,6 +13686,14 @@ export class ParamsContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitParams) {
 	 		listener.exitParams(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitParams) {
+			return visitor.visitParams(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -13448,6 +13738,14 @@ export class ParametersContext extends ParserRuleContext {
 	 		listener.exitParameters(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitParameters) {
+			return visitor.visitParameters(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -13479,6 +13777,14 @@ export class Slash_no_defaultContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitSlash_no_default) {
 	 		listener.exitSlash_no_default(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitSlash_no_default) {
+			return visitor.visitSlash_no_default(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -13518,6 +13824,14 @@ export class Slash_with_defaultContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitSlash_with_default) {
 	 		listener.exitSlash_with_default(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitSlash_with_default) {
+			return visitor.visitSlash_with_default(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -13562,6 +13876,14 @@ export class Star_etcContext extends ParserRuleContext {
 	 		listener.exitStar_etc(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitStar_etc) {
+			return visitor.visitStar_etc(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -13587,6 +13909,14 @@ export class KwdsContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitKwds) {
 	 		listener.exitKwds(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitKwds) {
+			return visitor.visitKwds(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -13619,6 +13949,14 @@ export class Param_no_defaultContext extends ParserRuleContext {
 	 		listener.exitParam_no_default(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitParam_no_default) {
+			return visitor.visitParam_no_default(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -13647,6 +13985,14 @@ export class Param_no_default_star_annotationContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitParam_no_default_star_annotation) {
 	 		listener.exitParam_no_default_star_annotation(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitParam_no_default_star_annotation) {
+			return visitor.visitParam_no_default_star_annotation(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -13682,6 +14028,14 @@ export class Param_with_defaultContext extends ParserRuleContext {
 	 		listener.exitParam_with_default(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitParam_with_default) {
+			return visitor.visitParam_with_default(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -13715,6 +14069,14 @@ export class Param_maybe_defaultContext extends ParserRuleContext {
 	 		listener.exitParam_maybe_default(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitParam_maybe_default) {
+			return visitor.visitParam_maybe_default(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -13740,6 +14102,14 @@ export class ParamContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitParam) {
 	 		listener.exitParam(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitParam) {
+			return visitor.visitParam(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -13769,6 +14139,14 @@ export class Param_star_annotationContext extends ParserRuleContext {
 	 		listener.exitParam_star_annotation(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitParam_star_annotation) {
+			return visitor.visitParam_star_annotation(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -13794,6 +14172,14 @@ export class AnnotationContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitAnnotation) {
 	 		listener.exitAnnotation(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitAnnotation) {
+			return visitor.visitAnnotation(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -13823,6 +14209,14 @@ export class Star_annotationContext extends ParserRuleContext {
 	 		listener.exitStar_annotation(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitStar_annotation) {
+			return visitor.visitStar_annotation(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -13848,6 +14242,14 @@ export class Default_assignmentContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitDefault_assignment) {
 	 		listener.exitDefault_assignment(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitDefault_assignment) {
+			return visitor.visitDefault_assignment(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -13889,6 +14291,14 @@ export class If_stmtContext extends ParserRuleContext {
 	 		listener.exitIf_stmt(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitIf_stmt) {
+			return visitor.visitIf_stmt(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -13928,6 +14338,14 @@ export class Elif_stmtContext extends ParserRuleContext {
 	 		listener.exitElif_stmt(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitElif_stmt) {
+			return visitor.visitElif_stmt(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -13956,6 +14374,14 @@ export class Else_blockContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitElse_block) {
 	 		listener.exitElse_block(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitElse_block) {
+			return visitor.visitElse_block(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -13992,6 +14418,14 @@ export class While_stmtContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitWhile_stmt) {
 	 		listener.exitWhile_stmt(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitWhile_stmt) {
+			return visitor.visitWhile_stmt(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -14040,6 +14474,14 @@ export class For_stmtContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitFor_stmt) {
 	 		listener.exitFor_stmt(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitFor_stmt) {
+			return visitor.visitFor_stmt(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -14096,6 +14538,14 @@ export class With_stmtContext extends ParserRuleContext {
 	 		listener.exitWith_stmt(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitWith_stmt) {
+			return visitor.visitWith_stmt(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -14124,6 +14574,14 @@ export class With_itemContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitWith_item) {
 	 		listener.exitWith_item(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitWith_item) {
+			return visitor.visitWith_item(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -14174,6 +14632,14 @@ export class Try_stmtContext extends ParserRuleContext {
 	 		listener.exitTry_stmt(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitTry_stmt) {
+			return visitor.visitTry_stmt(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -14211,6 +14677,14 @@ export class Except_blockContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitExcept_block) {
 	 		listener.exitExcept_block(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitExcept_block) {
+			return visitor.visitExcept_block(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -14255,6 +14729,14 @@ export class Except_star_blockContext extends ParserRuleContext {
 	 		listener.exitExcept_star_block(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitExcept_star_block) {
+			return visitor.visitExcept_star_block(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -14283,6 +14765,14 @@ export class Finally_blockContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitFinally_block) {
 	 		listener.exitFinally_block(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitFinally_block) {
+			return visitor.visitFinally_block(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -14330,6 +14820,14 @@ export class Match_stmtContext extends ParserRuleContext {
 	 		listener.exitMatch_stmt(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitMatch_stmt) {
+			return visitor.visitMatch_stmt(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -14361,6 +14859,14 @@ export class Subject_exprContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitSubject_expr) {
 	 		listener.exitSubject_expr(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitSubject_expr) {
+			return visitor.visitSubject_expr(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -14399,6 +14905,14 @@ export class Case_blockContext extends ParserRuleContext {
 	 		listener.exitCase_block(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitCase_block) {
+			return visitor.visitCase_block(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -14424,6 +14938,14 @@ export class GuardContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitGuard) {
 	 		listener.exitGuard(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitGuard) {
+			return visitor.visitGuard(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -14453,6 +14975,14 @@ export class PatternsContext extends ParserRuleContext {
 	 		listener.exitPatterns(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitPatterns) {
+			return visitor.visitPatterns(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -14478,6 +15008,14 @@ export class PatternContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitPattern) {
 	 		listener.exitPattern(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitPattern) {
+			return visitor.visitPattern(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -14508,6 +15046,14 @@ export class As_patternContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitAs_pattern) {
 	 		listener.exitAs_pattern(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitAs_pattern) {
+			return visitor.visitAs_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -14541,6 +15087,14 @@ export class Or_patternContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitOr_pattern) {
 	 		listener.exitOr_pattern(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitOr_pattern) {
+			return visitor.visitOr_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -14588,6 +15142,14 @@ export class Closed_patternContext extends ParserRuleContext {
 	 		listener.exitClosed_pattern(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitClosed_pattern) {
+			return visitor.visitClosed_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -14625,6 +15187,14 @@ export class Literal_patternContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitLiteral_pattern) {
 	 		listener.exitLiteral_pattern(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitLiteral_pattern) {
+			return visitor.visitLiteral_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -14666,6 +15236,14 @@ export class Literal_exprContext extends ParserRuleContext {
 	 		listener.exitLiteral_expr(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitLiteral_expr) {
+			return visitor.visitLiteral_expr(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -14699,6 +15277,14 @@ export class Complex_numberContext extends ParserRuleContext {
 	 		listener.exitComplex_number(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitComplex_number) {
+			return visitor.visitComplex_number(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -14724,6 +15310,14 @@ export class Signed_numberContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitSigned_number) {
 	 		listener.exitSigned_number(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitSigned_number) {
+			return visitor.visitSigned_number(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -14753,6 +15347,14 @@ export class Signed_real_numberContext extends ParserRuleContext {
 	 		listener.exitSigned_real_number(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitSigned_real_number) {
+			return visitor.visitSigned_real_number(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -14775,6 +15377,14 @@ export class Real_numberContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitReal_number) {
 	 		listener.exitReal_number(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitReal_number) {
+			return visitor.visitReal_number(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -14801,6 +15411,14 @@ export class Imaginary_numberContext extends ParserRuleContext {
 	 		listener.exitImaginary_number(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitImaginary_number) {
+			return visitor.visitImaginary_number(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -14823,6 +15441,14 @@ export class Capture_patternContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitCapture_pattern) {
 	 		listener.exitCapture_pattern(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitCapture_pattern) {
+			return visitor.visitCapture_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -14849,6 +15475,14 @@ export class Pattern_capture_targetContext extends ParserRuleContext {
 	 		listener.exitPattern_capture_target(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitPattern_capture_target) {
+			return visitor.visitPattern_capture_target(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -14873,6 +15507,14 @@ export class Wildcard_patternContext extends ParserRuleContext {
 	 		listener.exitWildcard_pattern(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitWildcard_pattern) {
+			return visitor.visitWildcard_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -14895,6 +15537,14 @@ export class Value_patternContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitValue_pattern) {
 	 		listener.exitValue_pattern(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitValue_pattern) {
+			return visitor.visitValue_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -14930,6 +15580,14 @@ export class AttrContext extends ParserRuleContext {
 	 		listener.exitAttr(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitAttr) {
+			return visitor.visitAttr(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -14963,6 +15621,14 @@ export class Name_or_attrContext extends ParserRuleContext {
 	 		listener.exitName_or_attr(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitName_or_attr) {
+			return visitor.visitName_or_attr(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -14991,6 +15657,14 @@ export class Group_patternContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitGroup_pattern) {
 	 		listener.exitGroup_pattern(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitGroup_pattern) {
+			return visitor.visitGroup_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -15032,6 +15706,14 @@ export class Sequence_patternContext extends ParserRuleContext {
 	 		listener.exitSequence_pattern(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitSequence_pattern) {
+			return visitor.visitSequence_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -15060,6 +15742,14 @@ export class Open_sequence_patternContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitOpen_sequence_pattern) {
 	 		listener.exitOpen_sequence_pattern(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitOpen_sequence_pattern) {
+			return visitor.visitOpen_sequence_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -15095,6 +15785,14 @@ export class Maybe_sequence_patternContext extends ParserRuleContext {
 	 		listener.exitMaybe_sequence_pattern(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitMaybe_sequence_pattern) {
+			return visitor.visitMaybe_sequence_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -15122,6 +15820,14 @@ export class Maybe_star_patternContext extends ParserRuleContext {
 	 		listener.exitMaybe_star_pattern(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitMaybe_star_pattern) {
+			return visitor.visitMaybe_star_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -15147,6 +15853,14 @@ export class Star_patternContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitStar_pattern) {
 	 		listener.exitStar_pattern(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitStar_pattern) {
+			return visitor.visitStar_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -15188,6 +15902,14 @@ export class Mapping_patternContext extends ParserRuleContext {
 	 		listener.exitMapping_pattern(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitMapping_pattern) {
+			return visitor.visitMapping_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -15219,6 +15941,14 @@ export class Items_patternContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitItems_pattern) {
 	 		listener.exitItems_pattern(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitItems_pattern) {
+			return visitor.visitItems_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -15254,6 +15984,14 @@ export class Key_value_patternContext extends ParserRuleContext {
 	 		listener.exitKey_value_pattern(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitKey_value_pattern) {
+			return visitor.visitKey_value_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -15279,6 +16017,14 @@ export class Double_star_patternContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitDouble_star_pattern) {
 	 		listener.exitDouble_star_pattern(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitDouble_star_pattern) {
+			return visitor.visitDouble_star_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -15323,6 +16069,14 @@ export class Class_patternContext extends ParserRuleContext {
 	 		listener.exitClass_pattern(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitClass_pattern) {
+			return visitor.visitClass_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -15354,6 +16108,14 @@ export class Positional_patternsContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitPositional_patterns) {
 	 		listener.exitPositional_patterns(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitPositional_patterns) {
+			return visitor.visitPositional_patterns(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -15389,6 +16151,14 @@ export class Keyword_patternsContext extends ParserRuleContext {
 	 		listener.exitKeyword_patterns(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitKeyword_patterns) {
+			return visitor.visitKeyword_patterns(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -15417,6 +16187,14 @@ export class Keyword_patternContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitKeyword_pattern) {
 	 		listener.exitKeyword_pattern(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitKeyword_pattern) {
+			return visitor.visitKeyword_pattern(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -15455,6 +16233,14 @@ export class Type_aliasContext extends ParserRuleContext {
 	 		listener.exitType_alias(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitType_alias) {
+			return visitor.visitType_alias(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -15483,6 +16269,14 @@ export class Type_paramsContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitType_params) {
 	 		listener.exitType_params(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitType_params) {
+			return visitor.visitType_params(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -15516,6 +16310,14 @@ export class Type_param_seqContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitType_param_seq) {
 	 		listener.exitType_param_seq(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitType_param_seq) {
+			return visitor.visitType_param_seq(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -15557,6 +16359,14 @@ export class Type_paramContext extends ParserRuleContext {
 	 		listener.exitType_param(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitType_param) {
+			return visitor.visitType_param(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -15582,6 +16392,14 @@ export class Type_param_boundContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitType_param_bound) {
 	 		listener.exitType_param_bound(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitType_param_bound) {
+			return visitor.visitType_param_bound(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -15611,6 +16429,14 @@ export class Type_param_defaultContext extends ParserRuleContext {
 	 		listener.exitType_param_default(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitType_param_default) {
+			return visitor.visitType_param_default(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -15636,6 +16462,14 @@ export class Type_param_starred_defaultContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitType_param_starred_default) {
 	 		listener.exitType_param_starred_default(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitType_param_starred_default) {
+			return visitor.visitType_param_starred_default(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -15669,6 +16503,14 @@ export class ExpressionsContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitExpressions) {
 	 		listener.exitExpressions(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitExpressions) {
+			return visitor.visitExpressions(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -15710,6 +16552,14 @@ export class ExpressionContext extends ParserRuleContext {
 	 		listener.exitExpression(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitExpression) {
+			return visitor.visitExpression(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -15741,6 +16591,14 @@ export class Yield_exprContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitYield_expr) {
 	 		listener.exitYield_expr(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitYield_expr) {
+			return visitor.visitYield_expr(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -15776,6 +16634,14 @@ export class Star_expressionsContext extends ParserRuleContext {
 	 		listener.exitStar_expressions(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitStar_expressions) {
+			return visitor.visitStar_expressions(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -15804,6 +16670,14 @@ export class Star_expressionContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitStar_expression) {
 	 		listener.exitStar_expression(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitStar_expression) {
+			return visitor.visitStar_expression(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -15839,6 +16713,14 @@ export class Star_named_expressionsContext extends ParserRuleContext {
 	 		listener.exitStar_named_expressions(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitStar_named_expressions) {
+			return visitor.visitStar_named_expressions(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -15867,6 +16749,14 @@ export class Star_named_expressionContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitStar_named_expression) {
 	 		listener.exitStar_named_expression(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitStar_named_expression) {
+			return visitor.visitStar_named_expression(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -15899,6 +16789,14 @@ export class Assignment_expressionContext extends ParserRuleContext {
 	 		listener.exitAssignment_expression(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitAssignment_expression) {
+			return visitor.visitAssignment_expression(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -15924,6 +16822,14 @@ export class Named_expressionContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitNamed_expression) {
 	 		listener.exitNamed_expression(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitNamed_expression) {
+			return visitor.visitNamed_expression(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -15959,6 +16865,14 @@ export class DisjunctionContext extends ParserRuleContext {
 	 		listener.exitDisjunction(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitDisjunction) {
+			return visitor.visitDisjunction(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -15992,6 +16906,14 @@ export class ConjunctionContext extends ParserRuleContext {
 	 		listener.exitConjunction(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitConjunction) {
+			return visitor.visitConjunction(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16022,6 +16944,14 @@ export class InversionContext extends ParserRuleContext {
 	 		listener.exitInversion(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitInversion) {
+			return visitor.visitInversion(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16050,6 +16980,14 @@ export class ComparisonContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitComparison) {
 	 		listener.exitComparison(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitComparison) {
+			return visitor.visitComparison(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -16103,6 +17041,14 @@ export class Compare_op_bitwise_or_pairContext extends ParserRuleContext {
 	 		listener.exitCompare_op_bitwise_or_pair(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitCompare_op_bitwise_or_pair) {
+			return visitor.visitCompare_op_bitwise_or_pair(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16128,6 +17074,14 @@ export class Eq_bitwise_orContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitEq_bitwise_or) {
 	 		listener.exitEq_bitwise_or(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitEq_bitwise_or) {
+			return visitor.visitEq_bitwise_or(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -16157,6 +17111,14 @@ export class Noteq_bitwise_orContext extends ParserRuleContext {
 	 		listener.exitNoteq_bitwise_or(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitNoteq_bitwise_or) {
+			return visitor.visitNoteq_bitwise_or(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16182,6 +17144,14 @@ export class Lte_bitwise_orContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitLte_bitwise_or) {
 	 		listener.exitLte_bitwise_or(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitLte_bitwise_or) {
+			return visitor.visitLte_bitwise_or(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -16211,6 +17181,14 @@ export class Lt_bitwise_orContext extends ParserRuleContext {
 	 		listener.exitLt_bitwise_or(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitLt_bitwise_or) {
+			return visitor.visitLt_bitwise_or(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16238,6 +17216,14 @@ export class Gte_bitwise_orContext extends ParserRuleContext {
 	 		listener.exitGte_bitwise_or(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitGte_bitwise_or) {
+			return visitor.visitGte_bitwise_or(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16263,6 +17249,14 @@ export class Gt_bitwise_orContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitGt_bitwise_or) {
 	 		listener.exitGt_bitwise_or(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitGt_bitwise_or) {
+			return visitor.visitGt_bitwise_or(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -16295,6 +17289,14 @@ export class Notin_bitwise_orContext extends ParserRuleContext {
 	 		listener.exitNotin_bitwise_or(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitNotin_bitwise_or) {
+			return visitor.visitNotin_bitwise_or(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16320,6 +17322,14 @@ export class In_bitwise_orContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitIn_bitwise_or) {
 	 		listener.exitIn_bitwise_or(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitIn_bitwise_or) {
+			return visitor.visitIn_bitwise_or(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -16352,6 +17362,14 @@ export class Isnot_bitwise_orContext extends ParserRuleContext {
 	 		listener.exitIsnot_bitwise_or(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitIsnot_bitwise_or) {
+			return visitor.visitIsnot_bitwise_or(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16377,6 +17395,14 @@ export class Is_bitwise_orContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitIs_bitwise_or) {
 	 		listener.exitIs_bitwise_or(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitIs_bitwise_or) {
+			return visitor.visitIs_bitwise_or(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -16409,6 +17435,14 @@ export class Bitwise_orContext extends ParserRuleContext {
 	 		listener.exitBitwise_or(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitBitwise_or) {
+			return visitor.visitBitwise_or(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16439,6 +17473,14 @@ export class Bitwise_xorContext extends ParserRuleContext {
 	 		listener.exitBitwise_xor(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitBitwise_xor) {
+			return visitor.visitBitwise_xor(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16467,6 +17509,14 @@ export class Bitwise_andContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitBitwise_and) {
 	 		listener.exitBitwise_and(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitBitwise_and) {
+			return visitor.visitBitwise_and(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -16502,6 +17552,14 @@ export class Shift_exprContext extends ParserRuleContext {
 	 		listener.exitShift_expr(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitShift_expr) {
+			return visitor.visitShift_expr(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16533,6 +17591,14 @@ export class SumContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitSum) {
 	 		listener.exitSum(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitSum) {
+			return visitor.visitSum(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -16577,6 +17643,14 @@ export class TermContext extends ParserRuleContext {
 	 		listener.exitTerm(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitTerm) {
+			return visitor.visitTerm(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16613,6 +17687,14 @@ export class FactorContext extends ParserRuleContext {
 	 		listener.exitFactor(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitFactor) {
+			return visitor.visitFactor(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16643,6 +17725,14 @@ export class PowerContext extends ParserRuleContext {
 	 		listener.exitPower(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitPower) {
+			return visitor.visitPower(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16668,6 +17758,14 @@ export class Await_primaryContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitAwait_primary) {
 	 		listener.exitAwait_primary(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitAwait_primary) {
+			return visitor.visitAwait_primary(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -16724,6 +17822,14 @@ export class PrimaryContext extends ParserRuleContext {
 	 		listener.exitPrimary(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitPrimary) {
+			return visitor.visitPrimary(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16763,6 +17869,14 @@ export class SlicesContext extends ParserRuleContext {
 	 		listener.exitSlices(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitSlices) {
+			return visitor.visitSlices(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16797,6 +17911,14 @@ export class SliceContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitSlice) {
 	 		listener.exitSlice(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitSlice) {
+			return visitor.visitSlice(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -16868,6 +17990,14 @@ export class AtomContext extends ParserRuleContext {
 	 		listener.exitAtom(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitAtom) {
+			return visitor.visitAtom(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16899,6 +18029,14 @@ export class GroupContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitGroup) {
 	 		listener.exitGroup(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitGroup) {
+			return visitor.visitGroup(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -16934,6 +18072,14 @@ export class LambdefContext extends ParserRuleContext {
 	 		listener.exitLambdef(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitLambdef) {
+			return visitor.visitLambdef(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -16956,6 +18102,14 @@ export class Lambda_paramsContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitLambda_params) {
 	 		listener.exitLambda_params(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitLambda_params) {
+			return visitor.visitLambda_params(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -17000,6 +18154,14 @@ export class Lambda_parametersContext extends ParserRuleContext {
 	 		listener.exitLambda_parameters(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitLambda_parameters) {
+			return visitor.visitLambda_parameters(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17031,6 +18193,14 @@ export class Lambda_slash_no_defaultContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitLambda_slash_no_default) {
 	 		listener.exitLambda_slash_no_default(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitLambda_slash_no_default) {
+			return visitor.visitLambda_slash_no_default(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -17072,6 +18242,14 @@ export class Lambda_slash_with_defaultContext extends ParserRuleContext {
 	 		listener.exitLambda_slash_with_default(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitLambda_slash_with_default) {
+			return visitor.visitLambda_slash_with_default(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17111,6 +18289,14 @@ export class Lambda_star_etcContext extends ParserRuleContext {
 	 		listener.exitLambda_star_etc(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitLambda_star_etc) {
+			return visitor.visitLambda_star_etc(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17138,6 +18324,14 @@ export class Lambda_kwdsContext extends ParserRuleContext {
 	 		listener.exitLambda_kwds(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitLambda_kwds) {
+			return visitor.visitLambda_kwds(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17163,6 +18357,14 @@ export class Lambda_param_no_defaultContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitLambda_param_no_default) {
 	 		listener.exitLambda_param_no_default(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitLambda_param_no_default) {
+			return visitor.visitLambda_param_no_default(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -17195,6 +18397,14 @@ export class Lambda_param_with_defaultContext extends ParserRuleContext {
 	 		listener.exitLambda_param_with_default(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitLambda_param_with_default) {
+			return visitor.visitLambda_param_with_default(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17225,6 +18435,14 @@ export class Lambda_param_maybe_defaultContext extends ParserRuleContext {
 	 		listener.exitLambda_param_maybe_default(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitLambda_param_maybe_default) {
+			return visitor.visitLambda_param_maybe_default(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17247,6 +18465,14 @@ export class Lambda_paramContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitLambda_param) {
 	 		listener.exitLambda_param(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitLambda_param) {
+			return visitor.visitLambda_param(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -17274,6 +18500,14 @@ export class Fstring_middleContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitFstring_middle) {
 	 		listener.exitFstring_middle(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitFstring_middle) {
+			return visitor.visitFstring_middle(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -17315,6 +18549,14 @@ export class Fstring_replacement_fieldContext extends ParserRuleContext {
 	 		listener.exitFstring_replacement_field(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitFstring_replacement_field) {
+			return visitor.visitFstring_replacement_field(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17340,6 +18582,14 @@ export class Fstring_conversionContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitFstring_conversion) {
 	 		listener.exitFstring_conversion(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitFstring_conversion) {
+			return visitor.visitFstring_conversion(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -17372,6 +18622,14 @@ export class Fstring_full_format_specContext extends ParserRuleContext {
 	 		listener.exitFstring_full_format_spec(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitFstring_full_format_spec) {
+			return visitor.visitFstring_full_format_spec(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17397,6 +18655,14 @@ export class Fstring_format_specContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitFstring_format_spec) {
 	 		listener.exitFstring_format_spec(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitFstring_format_spec) {
+			return visitor.visitFstring_format_spec(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -17432,6 +18698,14 @@ export class FstringContext extends ParserRuleContext {
 	 		listener.exitFstring(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitFstring) {
+			return visitor.visitFstring(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17454,6 +18728,14 @@ export class StringContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitString) {
 	 		listener.exitString(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitString) {
+			return visitor.visitString(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -17489,6 +18771,14 @@ export class StringsContext extends ParserRuleContext {
 	 		listener.exitStrings(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitStrings) {
+			return visitor.visitStrings(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17517,6 +18807,14 @@ export class ListContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitList) {
 	 		listener.exitList(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitList) {
+			return visitor.visitList(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -17555,6 +18853,14 @@ export class TupleContext extends ParserRuleContext {
 	 		listener.exitTuple(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitTuple) {
+			return visitor.visitTuple(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17585,6 +18891,14 @@ export class SetContext extends ParserRuleContext {
 	 		listener.exitSet(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitSet) {
+			return visitor.visitSet(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17613,6 +18927,14 @@ export class DictContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitDict) {
 	 		listener.exitDict(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitDict) {
+			return visitor.visitDict(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -17648,6 +18970,14 @@ export class Double_starred_kvpairsContext extends ParserRuleContext {
 	 		listener.exitDouble_starred_kvpairs(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitDouble_starred_kvpairs) {
+			return visitor.visitDouble_starred_kvpairs(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17676,6 +19006,14 @@ export class Double_starred_kvpairContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitDouble_starred_kvpair) {
 	 		listener.exitDouble_starred_kvpair(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitDouble_starred_kvpair) {
+			return visitor.visitDouble_starred_kvpair(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -17708,6 +19046,14 @@ export class KvpairContext extends ParserRuleContext {
 	 		listener.exitKvpair(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitKvpair) {
+			return visitor.visitKvpair(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17733,6 +19079,14 @@ export class For_if_clausesContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitFor_if_clauses) {
 	 		listener.exitFor_if_clauses(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitFor_if_clauses) {
+			return visitor.visitFor_if_clauses(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -17780,6 +19134,14 @@ export class For_if_clauseContext extends ParserRuleContext {
 	 		listener.exitFor_if_clause(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitFor_if_clause) {
+			return visitor.visitFor_if_clause(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17813,6 +19175,14 @@ export class ListcompContext extends ParserRuleContext {
 	 		listener.exitListcomp(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitListcomp) {
+			return visitor.visitListcomp(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17844,6 +19214,14 @@ export class SetcompContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitSetcomp) {
 	 		listener.exitSetcomp(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitSetcomp) {
+			return visitor.visitSetcomp(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -17882,6 +19260,14 @@ export class GenexpContext extends ParserRuleContext {
 	 		listener.exitGenexp(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitGenexp) {
+			return visitor.visitGenexp(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17915,6 +19301,14 @@ export class DictcompContext extends ParserRuleContext {
 	 		listener.exitDictcomp(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitDictcomp) {
+			return visitor.visitDictcomp(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -17940,6 +19334,14 @@ export class ArgumentsContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitArguments) {
 	 		listener.exitArguments(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitArguments) {
+			return visitor.visitArguments(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -17990,6 +19392,14 @@ export class ArgsContext extends ParserRuleContext {
 	 		listener.exitArgs(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitArgs) {
+			return visitor.visitArgs(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -18029,6 +19439,14 @@ export class KwargsContext extends ParserRuleContext {
 	 		listener.exitKwargs(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitKwargs) {
+			return visitor.visitKwargs(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -18054,6 +19472,14 @@ export class Starred_expressionContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitStarred_expression) {
 	 		listener.exitStarred_expression(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitStarred_expression) {
+			return visitor.visitStarred_expression(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -18089,6 +19515,14 @@ export class Kwarg_or_starredContext extends ParserRuleContext {
 	 		listener.exitKwarg_or_starred(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitKwarg_or_starred) {
+			return visitor.visitKwarg_or_starred(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -18120,6 +19554,14 @@ export class Kwarg_or_double_starredContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitKwarg_or_double_starred) {
 	 		listener.exitKwarg_or_double_starred(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitKwarg_or_double_starred) {
+			return visitor.visitKwarg_or_double_starred(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -18155,6 +19597,14 @@ export class Star_targetsContext extends ParserRuleContext {
 	 		listener.exitStar_targets(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitStar_targets) {
+			return visitor.visitStar_targets(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -18186,6 +19636,14 @@ export class Star_targets_list_seqContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitStar_targets_list_seq) {
 	 		listener.exitStar_targets_list_seq(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitStar_targets_list_seq) {
+			return visitor.visitStar_targets_list_seq(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -18221,6 +19679,14 @@ export class Star_targets_tuple_seqContext extends ParserRuleContext {
 	 		listener.exitStar_targets_tuple_seq(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitStar_targets_tuple_seq) {
+			return visitor.visitStar_targets_tuple_seq(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -18249,6 +19715,14 @@ export class Star_targetContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitStar_target) {
 	 		listener.exitStar_target(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitStar_target) {
+			return visitor.visitStar_target(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -18291,6 +19765,14 @@ export class Target_with_star_atomContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitTarget_with_star_atom) {
 	 		listener.exitTarget_with_star_atom(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitTarget_with_star_atom) {
+			return visitor.visitTarget_with_star_atom(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -18338,6 +19820,14 @@ export class Star_atomContext extends ParserRuleContext {
 	 		listener.exitStar_atom(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitStar_atom) {
+			return visitor.visitStar_atom(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -18372,6 +19862,14 @@ export class Single_targetContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitSingle_target) {
 	 		listener.exitSingle_target(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitSingle_target) {
+			return visitor.visitSingle_target(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -18411,6 +19909,14 @@ export class Single_subscript_attribute_targetContext extends ParserRuleContext 
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitSingle_subscript_attribute_target) {
 	 		listener.exitSingle_subscript_attribute_target(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitSingle_subscript_attribute_target) {
+			return visitor.visitSingle_subscript_attribute_target(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -18467,6 +19973,14 @@ export class T_primaryContext extends ParserRuleContext {
 	 		listener.exitT_primary(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitT_primary) {
+			return visitor.visitT_primary(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -18498,6 +20012,14 @@ export class Del_targetsContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitDel_targets) {
 	 		listener.exitDel_targets(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitDel_targets) {
+			return visitor.visitDel_targets(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -18542,6 +20064,14 @@ export class Del_targetContext extends ParserRuleContext {
 	 		listener.exitDel_target(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitDel_target) {
+			return visitor.visitDel_target(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -18584,6 +20114,14 @@ export class Del_t_atomContext extends ParserRuleContext {
 	 		listener.exitDel_t_atom(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitDel_t_atom) {
+			return visitor.visitDel_t_atom(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -18623,6 +20161,14 @@ export class Type_expressionsContext extends ParserRuleContext {
 	 		listener.exitType_expressions(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitType_expressions) {
+			return visitor.visitType_expressions(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -18648,6 +20194,14 @@ export class Func_type_commentContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitFunc_type_comment) {
 	 		listener.exitFunc_type_comment(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitFunc_type_comment) {
+			return visitor.visitFunc_type_comment(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }
@@ -18683,6 +20237,14 @@ export class Name_except_underscoreContext extends ParserRuleContext {
 	 		listener.exitName_except_underscore(this);
 		}
 	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitName_except_underscore) {
+			return visitor.visitName_except_underscore(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
 }
 
 
@@ -18708,6 +20270,14 @@ export class NameContext extends ParserRuleContext {
 	public exitRule(listener: PythonParserListener): void {
 	    if(listener.exitName) {
 	 		listener.exitName(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: PythonParserVisitor<Result>): Result {
+		if (visitor.visitName) {
+			return visitor.visitName(this);
+		} else {
+			return visitor.visitChildren(this);
 		}
 	}
 }

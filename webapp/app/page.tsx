@@ -1,6 +1,6 @@
 "use client";
-import Image from "next/image";
-import antlr4 from 'antlr4'
+// import Image from "next/image";
+// import antlr4 from 'antlr4'
 
 import * as React from 'react';
 import TextField from '@mui/material/TextField'
@@ -15,7 +15,7 @@ import FullPythonLexer from '../antlr/full/PythonLexer';
 import FullPythonParser from '../antlr/full/PythonParser';
 import OursPythonLexer from '../antlr/ours/MiniPythonLexer';
 import OursPythonParser from '../antlr/ours/MiniPythonParser';
-import LuaPythonListener from '../antlr/full/LuaPythonListener';
+import LuaPythonVisitor from '../antlr/full/LuaPythonVisitor';
 
 const lexers = {
   'full': FullPythonLexer,
@@ -29,7 +29,7 @@ const parsers = {
 
 export default function Home() {
   const [code, setCode] = React.useState('')
-  const [version, setVersion] = React.useState('ours')
+  const [version, setVersion] = React.useState('full')
   const [result, setResult] = React.useState('')
   const [dTree, setDTree] = React.useState('')
   React.useEffect(() => {
@@ -51,11 +51,12 @@ export default function Home() {
     setDTree(tree.toStringTree(parser.ruleNames))
 
     if (version == 'full') {
-      const luaRes = new LuaPythonListener()
-      antlr4.tree.ParseTreeWalker.DEFAULT.walk(luaRes, tree)
-      setResult(luaRes.result)
+      const luaVisitor = new LuaPythonVisitor()
+      const res = luaVisitor.visit(tree)
+      console.log("Result", res)
+      setResult(res ?? '-- No result')
     } else {
-      setResult("Can only parse full grammar")
+      setResult("-- Can only parse full grammar")
     }
   }, [ code, version ])
 
@@ -71,10 +72,10 @@ export default function Home() {
         <MenuItem value='ours'>Our Version</MenuItem>
       </Select><br />
       <TextField variant='outlined' multiline value={code} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCode(e.target.value)} />
-      <p>{dTree}</p>
       <SyntaxHighlighter language="lua" style={dark}>
         {result}
       </SyntaxHighlighter>
+      <p>{dTree}</p>
     </>
   );
 }
