@@ -26,7 +26,18 @@ import {
     If_stmtContext,
     Elif_stmtContext,
     Else_blockContext,
-    While_stmtContext
+    While_stmtContext,
+    Eq_bitwise_orContext,
+    Notin_bitwise_orContext,
+    Lte_bitwise_orContext,
+    Lt_bitwise_orContext,
+    Gte_bitwise_orContext,
+    Gt_bitwise_orContext,
+    DisjunctionContext,
+    ConjunctionContext,
+    InversionContext,
+    ComparisonContext,
+    Compare_op_bitwise_or_pairContext
 } from "./PythonParser";
 import PythonParserVisitor from "./PythonParserVisitor";
 import PythonLexer from "./PythonLexer";
@@ -335,13 +346,103 @@ function_def_raw
   while_stmt
     : 'while' named_expression ':' block else_block?;
   */
-   visitWhile_stmt(ctx: While_stmtContext): string {
+  visitWhile_stmt(ctx: While_stmtContext): string {
     let result = `while ${this.visit(ctx.named_expression())} do\n`
     result += this.visit(ctx.block())
     // TODO: How to handle else?
     result += '\nend'
     return result
-   }
+  }
+  /*
+  comparison
+    : bitwise_or compare_op_bitwise_or_pair*
+    ;
+  */
+  visitComparison(ctx: ComparisonContext): string {
+    const compopbitorpair = ctx.compare_op_bitwise_or_pair_list()
+    if (compopbitorpair.length == 0) return this.visit(ctx.bitwise_or())
+    return `${this.visit(ctx.bitwise_or())} ${compopbitorpair.map(x => this.visit(x)).join(' ')}`
+  }
+  /*
+  compare_op_bitwise_or_pair
+    : eq_bitwise_or
+    | noteq_bitwise_or
+    | lte_bitwise_or
+    | lt_bitwise_or
+    | gte_bitwise_or
+    | gt_bitwise_or
+    | notin_bitwise_or
+    | in_bitwise_or
+    | isnot_bitwise_or
+    | is_bitwise_or;
+  */
+  visitCompare_op_bitwise_or_pair(ctx: Compare_op_bitwise_or_pairContext): string {
+    return this.visit(ctx.getChild(0))
+  }
+  /*
+  eq_bitwise_or: '==' bitwise_or;
+  */
+  visitEq_bitwise_or(ctx: Eq_bitwise_orContext): string {
+    return `== ${this.visit(ctx.bitwise_or())}`
+  }
+  /*
+  noteq_bitwise_or
+    : ('!=' ) bitwise_or;
+  */
+  visitNotin_bitwise_or(ctx: Notin_bitwise_orContext): string {
+    return `~= ${this.visit(ctx.bitwise_or())}`
+  }
+  /*
+  lte_bitwise_or: '<=' bitwise_or;
+  */
+  visitLte_bitwise_or(ctx: Lte_bitwise_orContext): string {
+    return `<= ${this.visit(ctx.bitwise_or())}`
+  }
+  /*
+  lt_bitwise_or: '<' bitwise_or;
+  */
+  visitLt_bitwise_or(ctx: Lt_bitwise_orContext): string {
+    return `< ${this.visit(ctx.bitwise_or())}`
+  }
+  /*
+  gte_bitwise_or: '>=' bitwise_or;
+  */
+  visitGte_bitwise_or(ctx: Gte_bitwise_orContext): string {
+    return `>= ${this.visit(ctx.bitwise_or())}`
+  }
+  /*
+  gt_bitwise_or: '>' bitwise_or;
+  */
+  visitGt_bitwise_or(ctx: Gt_bitwise_orContext): string {
+    return `> ${this.visit(ctx.bitwise_or())}`
+  }
+  /*
+  disjunction
+    : conjunction ('or' conjunction )*
+    ;
+  */
+  visitDisjunction(ctx: DisjunctionContext): string {
+    // TODO: Confirm precedence in lua
+    return ctx.conjunction_list().map(x => this.visit(x)).join(' or ')
+  }
+  /*
+  conjunction
+    : inversion ('and' inversion )*
+    ;
+  */
+  visitConjunction(ctx: ConjunctionContext): string {
+    return ctx.inversion_list().map(x => this.visit(x)).join(' and ')
+  }
+  /*
+  inversion
+    : 'not' inversion
+    | comparison;
+  */
+  visitInversion(ctx: InversionContext): string {
+    const inv = ctx.inversion()
+    if (inv != null) return `not ${this.visit(inv)}`
+    return this.visit(ctx.comparison())
+  }
 }
 
 // Usunac break
@@ -745,44 +846,10 @@ named_expression
     : assignment_expression
     | expression;
 
-disjunction
-    : conjunction ('or' conjunction )*
-    ;
-
-conjunction
-    : inversion ('and' inversion )*
-    ;
-
-inversion
-    : 'not' inversion
-    | comparison;
 
 // Comparison operators
 // --------------------
 
-comparison
-    : bitwise_or compare_op_bitwise_or_pair*
-    ;
-
-compare_op_bitwise_or_pair
-    : eq_bitwise_or
-    | noteq_bitwise_or
-    | lte_bitwise_or
-    | lt_bitwise_or
-    | gte_bitwise_or
-    | gt_bitwise_or
-    | notin_bitwise_or
-    | in_bitwise_or
-    | isnot_bitwise_or
-    | is_bitwise_or;
-
-eq_bitwise_or: '==' bitwise_or;
-noteq_bitwise_or
-    : ('!=' ) bitwise_or;
-lte_bitwise_or: '<=' bitwise_or;
-lt_bitwise_or: '<' bitwise_or;
-gte_bitwise_or: '>=' bitwise_or;
-gt_bitwise_or: '>' bitwise_or;
 notin_bitwise_or: 'not' 'in' bitwise_or;
 in_bitwise_or: 'in' bitwise_or;
 isnot_bitwise_or: 'is' 'not' bitwise_or;
