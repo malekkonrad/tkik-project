@@ -18,7 +18,15 @@ import {
     SumContext,
     TermContext,
     FactorContext,
-    PowerContext
+    PowerContext,
+    Del_stmtContext,
+    Global_stmtContext,
+    Nonlocal_stmtContext,
+    BlockContext,
+    If_stmtContext,
+    Elif_stmtContext,
+    Else_blockContext,
+    While_stmtContext
 } from "./PythonParser";
 import PythonParserVisitor from "./PythonParserVisitor";
 import PythonLexer from "./PythonLexer";
@@ -244,6 +252,96 @@ function_def_raw
     }
     return this.visit(awaitPrim)
   }
+  /*
+  del_stmt
+    : 'del' del_targets;
+  */
+ visitDel_stmt(ctx: Del_stmtContext): string {
+    // TODO: Need to confirm if that's fully alright
+    return `${this.visit(ctx.del_targets())} = nil`
+  }
+  /*
+  global_stmt: 'global' name (',' name)*;
+  */
+  visitGlobal_stmt(ctx: Global_stmtContext): string {
+    // Global does not exist in lua
+    // TODO: Need to figure out how to handle local variables
+    return `--[[ global ${ctx.name_list().map(x => this.visit(x)).join(',')} ]]`
+  }
+  /*
+  nonlocal_stmt: 'nonlocal' name (',' name)*;
+  */
+  visitNonlocal_stmt(ctx: Nonlocal_stmtContext): string {
+    // TODO: What's nonlocal?
+    return `--[[ nonlocal ${ctx.name_list().map(x => this.visit(x)).join(',')} ]]`
+  }
+  /*
+  block
+    : NEWLINE INDENT statements DEDENT
+    | simple_stmts;
+  */
+  visitBlock(ctx: BlockContext): string {
+    let result = 'do\n'
+    const stmts = ctx.statements()
+    const simple_stmts = ctx.simple_stmts()
+    if (stmts != null) {
+        result += this.visit(stmts)
+    } else if (simple_stmts != null) {
+        result += this.visit(simple_stmts)
+    }
+    result += '\nend'
+    return result
+  }
+  /*
+  if_stmt
+    : 'if' named_expression ':' block (elif_stmt | else_block?)
+    ;
+  */
+  visitIf_stmt(ctx: If_stmtContext): string {
+    let result = `if ${this.visit(ctx.named_expression())} then\n`
+    result += this.visit(ctx.block())
+    const elif_stmt = ctx.elif_stmt()
+    if (elif_stmt != null) result += `\n${this.visit(elif_stmt)}`
+    const else_block = ctx.else_block()
+    if (else_block != null) result += `\n${this.visit(else_block)}`
+    result += '\nend'
+    return result
+  }
+  /*
+  elif_stmt
+    : 'elif' named_expression ':' block (elif_stmt | else_block?)
+    ;
+  */
+  visitElif_stmt(ctx: Elif_stmtContext): string {
+    let result = `elif ${this.visit(ctx.named_expression())} then\n`
+    result += this.visit(ctx.block())
+    const elif_stmt = ctx.elif_stmt()
+    if (elif_stmt != null) result += `\n${this.visit(elif_stmt)}`
+    const else_block = ctx.else_block()
+    if (else_block != null) result += `\n${this.visit(else_block)}`
+    // end is already within if_stmt
+    return result
+  }
+  /*
+  else_block
+    : 'else' ':' block;
+  */
+  visitElse_block(ctx: Else_blockContext): string {
+    let result = 'else\n'
+    result += this.visit(ctx.block())
+    return result
+  }
+  /*
+  while_stmt
+    : 'while' named_expression ':' block else_block?;
+  */
+   visitWhile_stmt(ctx: While_stmtContext): string {
+    let result = `while ${this.visit(ctx.named_expression())} do\n`
+    result += this.visit(ctx.block())
+    // TODO: How to handle else?
+    result += '\nend'
+    return result
+   }
 }
 
 // Usunac break
@@ -287,13 +385,6 @@ raise_stmt
     : 'raise' (expression ('from' expression )?)?
     ;
 
-global_stmt: 'global' name (',' name)*;
-
-nonlocal_stmt: 'nonlocal' name (',' name)*;
-
-del_stmt
-    : 'del' del_targets;
-
 yield_stmt: yield_expr;
 
 assert_stmt: 'assert' expression (',' expression )?;
@@ -331,10 +422,6 @@ dotted_name
 
 // Common elements
 // ---------------
-
-block
-    : NEWLINE INDENT statements DEDENT
-    | simple_stmts;
 
 decorators: ('@' named_expression NEWLINE )+;
 
@@ -418,20 +505,6 @@ default_assignment: '=' expression;
 // If statement
 // ------------
 
-if_stmt
-    : 'if' named_expression ':' block (elif_stmt | else_block?)
-    ;
-elif_stmt
-    : 'elif' named_expression ':' block (elif_stmt | else_block?)
-    ;
-else_block
-    : 'else' ':' block;
-
-// While statement
-// ---------------
-
-while_stmt
-    : 'while' named_expression ':' block else_block?;
 
 // For statement
 // -------------
