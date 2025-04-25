@@ -1,5 +1,25 @@
 import { ParseTreeVisitor, TerminalNode } from "antlr4";
-import { AssignmentContext, Compound_stmtContext, Function_defContext, ProgramContext, Return_stmtContext, Simple_stmtContext, Simple_stmtsContext, StatementContext, StatementsContext } from "./PythonParser";
+import {
+    AssignmentContext,
+    Compound_stmtContext,
+    Function_defContext,
+    ProgramContext,
+    Return_stmtContext,
+    Simple_stmtContext,
+    Simple_stmtsContext,
+    Star_expressionsContext,
+    Star_expressionContext,
+    StatementContext,
+    StatementsContext,
+    Bitwise_orContext,
+    Bitwise_xorContext,
+    Bitwise_andContext,
+    Shift_exprContext,
+    SumContext,
+    TermContext,
+    FactorContext,
+    PowerContext
+} from "./PythonParser";
 import PythonParserVisitor from "./PythonParserVisitor";
 import PythonLexer from "./PythonLexer";
 
@@ -27,8 +47,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         case PythonLexer.BREAK:
           return 'break';
         case PythonLexer.CONTINUE:
-          // TODO ?????
-          return '?????????'
+          throw Error("TODO: Rozważyć continue")
       }
     }
     return this.visit(ch)
@@ -39,7 +58,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
 
   visitFunction_def(ctx: Function_defContext): string {
     let result = `function ${ctx.function_def_raw().name().getText()}(`
-    // Visit parameters
+    // TODO: Visit parameters
     console.log(ctx.function_def_raw().params())
     result += ')\n'
     result += this.visit(ctx.function_def_raw().block())
@@ -61,50 +80,180 @@ function_def_raw
     if (starExpr == null) return 'return'
     return `return ${this.visit(starExpr)}`
   }
+  /*
+  visitAssignment(ctx: AssignmentContext): string {
+    
+  }
+
+  */
+  /*
+  star_expressions
+    : star_expression (',' star_expression )* ','?
+    ;
+  */
+  visitStar_expressions(ctx: Star_expressionsContext): string {
+    const starExprs = ctx.star_expression_list()
+    if (starExprs.length > 1) {
+        return `table.unpack(tablesMerge(${ // TODO: Check if this solution works?
+            starExprs.map((x) => `table.pack(${this.visit(x)})`).join(", ")
+        }))`
+    }
+    return this.visit(starExprs[0])
+  }
+  /*
+  star_expression
+    : '*' bitwise_or
+    | expression;
+  */
+  visitStar_expression(ctx: Star_expressionContext): string {
+    const expr = ctx.expression()
+    if (expr != null) return this.visit(expr)
+    return `table.unpack(${this.visit(ctx.bitwise_or())})`
+  }
+  /*
+  bitwise_or
+    : bitwise_or '|' bitwise_xor
+    | bitwise_xor;
+  */
+  visitBitwise_or(ctx: Bitwise_orContext): string {
+    const bitOr = ctx.bitwise_or()
+    const bitXor = ctx.bitwise_xor()
+    if (bitOr != null) return `bit.bor(${this.visit(bitOr)}, ${this.visit(bitXor)})`
+    return this.visit(bitXor)
+  }
+  /*
+  bitwise_xor
+    : bitwise_xor '^' bitwise_and
+    | bitwise_and;
+  */
+  visitBitwise_xor(ctx: Bitwise_xorContext): string {
+    const bitXor = ctx.bitwise_xor()
+    const bitAnd = ctx.bitwise_and()
+    if (bitXor != null) return `bit.bxor(${this.visit(bitXor)}, ${this.visit(bitAnd)})`
+    return this.visit(bitAnd)
+  }
+  /*
+  bitwise_and
+    : bitwise_and '&' shift_expr
+    | shift_expr;
+  */
+  visitBitwise_and(ctx: Bitwise_andContext): string {
+    const bitAnd = ctx.bitwise_and()
+    const shiftExpr = ctx.shift_expr()
+    if (bitAnd != null) return `bit.band(${this.visit(bitAnd)}, ${this.visit(shiftExpr)})`
+    return this.visit(shiftExpr)
+  }
+  /*
+  shift_expr
+    : shift_expr ('<<' | '>>') sum
+    | sum
+    ;
+  */
+  visitShift_expr(ctx: Shift_exprContext): string {
+    const shiftExpr = ctx.shift_expr()
+    const sum = ctx.sum()
+    if (shiftExpr != null) {
+      const op = ctx.getChild(1) as TerminalNode
+      switch (op.symbol.type) {
+        case PythonLexer.LEFTSHIFT:
+          return `bit.lshift(${this.visit(shiftExpr)}, ${this.visit(sum)})`
+        case PythonLexer.RIGHTSHIFT:
+          return `bit.rshift(${this.visit(shiftExpr)}, ${this.visit(sum)})`
+      }
+    }
+    return this.visit(sum)
+  }
+  /*
+  sum
+    : sum ('+' | '-') term
+    | term
+    ;
+  */
+  visitSum(ctx: SumContext): string {
+    const sum = ctx.sum()
+    const term = ctx.term()
+    if (sum != null) {
+        const op = ctx.getChild(1) as TerminalNode
+        switch (op.symbol.type) {
+            case PythonLexer.PLUS:
+                return `${this.visit(sum)} + ${this.visit(term)}`
+            case PythonLexer.MINUS:
+                return `${this.visit(sum)} - ${this.visit(term)}`
+        }
+    }
+    return this.visit(term)
+  }
+  /*
+  term
+    : term ('*' | '/' | '//' | '%' | '@') factor
+    | factor
+    ;
+  */
+  visitTerm(ctx: TermContext): string {
+    const term = ctx.term()
+    const factor = ctx.factor()
+    if (term != null) {
+        const op = ctx.getChild(1) as TerminalNode
+        switch (op.symbol.type) {
+            case PythonLexer.STAR:
+                return `${this.visit(term)} * ${this.visit(factor)}`
+            case PythonLexer.SLASH:
+                return `${this.visit(term)} / ${this.visit(factor)}`
+            case PythonLexer.DOUBLESLASH:
+                return `math.floor(${this.visit(term)} / ${this.visit(factor)})`
+            case PythonLexer.PERCENT:
+                return `${this.visit(term)} % ${this.visit(factor)}`
+            case PythonLexer.AT:
+                throw Error("TODO: Remove AT")
+        }
+    }
+    return this.visit(factor)
+  }
+  /*
+  factor
+    : '+' factor
+    | '-' factor
+    | '~' factor
+    | power;
+  */
+  visitFactor(ctx: FactorContext): string {
+    const factor = ctx.factor()
+    if (factor != null) {
+        const op = ctx.getChild(0) as TerminalNode
+        switch (op.symbol.type) {
+            case PythonLexer.PLUS:
+                return this.visit(factor)
+            case PythonLexer.MINUS:
+                return `-(${this.visit(factor)})`
+            case PythonLexer.TILDE:
+                return `bit.bnot(${this.visit(factor)})`
+        }
+    }
+    return this.visit(ctx.power())
+  }
+  /*
+  power
+    : await_primary ('**' factor)?
+    ;
+  */
+  visitPower(ctx: PowerContext): string {
+    const factor = ctx.factor()
+    const awaitPrim = ctx.await_primary()
+    if (factor != null) {
+        return `math.pow(${this.visit(awaitPrim)}, ${this.visit(factor)})`
+    }
+    return this.visit(awaitPrim)
+  }
 }
 
+// Usunac break
+// Obsluga bledow semantycznych
+// (Odwolanie do nieistniejacych elementów?)
 
 /*
 
 eval: expressions NEWLINE* EOF;
 func_type: '(' type_expressions? ')' '->' expression NEWLINE* EOF;
-
-// GENERAL STATEMENTS
-// ==================
-
-statement: compound_stmt | simple_stmts;
-
-simple_stmts
-    : simple_stmt (';' simple_stmt)* ';'? NEWLINE
-    ;
-
-// NOTE: assignment MUST precede expression, else parsing a simple assignment
-// will throw a SyntaxError.
-simple_stmt
-    : assignment
-    | type_alias
-    | star_expressions
-    | return_stmt
-    | import_stmt
-    | raise_stmt
-    | 'pass'
-    | del_stmt
-    | yield_stmt
-    | assert_stmt
-    | 'break'
-    | 'continue'
-    | global_stmt
-    | nonlocal_stmt;
-
-compound_stmt
-    : function_def
-    | if_stmt
-    | class_def
-    | with_stmt
-    | for_stmt
-    | try_stmt
-    | while_stmt
-    | match_stmt;
 
 // SIMPLE STATEMENTS
 // =================
@@ -133,9 +282,6 @@ augassign
     | '>>='
     | '**='
     | '//=';
-
-return_stmt
-    : 'return' star_expressions?;
 
 raise_stmt
     : 'raise' (expression ('from' expression )?)?
@@ -513,15 +659,6 @@ yield_expr
     : 'yield' ('from' expression | star_expressions?)
     ;
 
-star_expressions
-    : star_expression (',' star_expression )* ','?
-    ;
-
-
-star_expression
-    : '*' bitwise_or
-    | expression;
-
 star_named_expressions: star_named_expression (',' star_named_expression)* ','?;
 
 star_named_expression
@@ -578,51 +715,6 @@ in_bitwise_or: 'in' bitwise_or;
 isnot_bitwise_or: 'is' 'not' bitwise_or;
 is_bitwise_or: 'is' bitwise_or;
 
-// Bitwise operators
-// -----------------
-
-bitwise_or
-    : bitwise_or '|' bitwise_xor
-    | bitwise_xor;
-
-bitwise_xor
-    : bitwise_xor '^' bitwise_and
-    | bitwise_and;
-
-bitwise_and
-    : bitwise_and '&' shift_expr
-    | shift_expr;
-
-shift_expr
-    : shift_expr ('<<' | '>>') sum
-    | sum
-    ;
-
-// Arithmetic operators
-// --------------------
-
-sum
-    : sum ('+' | '-') term
-    | term
-    ;
-
-term
-    : term ('*' | '/' | '//' | '%' | '@') factor
-    | factor
-    ;
-
-
-
-
-factor
-    : '+' factor
-    | '-' factor
-    | '~' factor
-    | power;
-
-power
-    : await_primary ('**' factor)?
-    ;
 
 // Primary elements
 // ----------------

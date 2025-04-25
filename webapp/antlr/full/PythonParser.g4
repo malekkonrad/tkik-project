@@ -40,9 +40,9 @@ options { tokenVocab=PythonLexer; }
 // STARTING RULES
 // ==============
 
-program: statements? EOF;
-interactive: statement_newline;
-eval: expressions NEWLINE* EOF;
+program: statements? EOF;   // Symbol startowy
+// interactive: statement_newline;
+// eval: expressions NEWLINE* EOF;
 func_type: '(' type_expressions? ')' '->' expression NEWLINE* EOF;
 
 // GENERAL STATEMENTS
@@ -52,11 +52,11 @@ statements: statement+;
 
 statement: compound_stmt  | simple_stmts;
 
-statement_newline
-    : compound_stmt NEWLINE
-    | simple_stmts
-    | NEWLINE
-    | EOF;
+//statement_newline
+//    : compound_stmt NEWLINE
+//    | simple_stmts
+//    | NEWLINE
+//    | EOF;
 
 simple_stmts
     : simple_stmt (';' simple_stmt)* ';'? NEWLINE
