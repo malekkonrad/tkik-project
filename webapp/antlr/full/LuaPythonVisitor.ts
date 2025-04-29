@@ -37,7 +37,8 @@ import {
     ConjunctionContext,
     InversionContext,
     ComparisonContext,
-    Compare_op_bitwise_or_pairContext
+    Compare_op_bitwise_or_pairContext,
+    AugassignContext
 } from "./PythonParser";
 import PythonParserVisitor from "./PythonParserVisitor";
 import PythonLexer from "./PythonLexer";
@@ -443,6 +444,79 @@ function_def_raw
     if (inv != null) return `not ${this.visit(inv)}`
     return this.visit(ctx.comparison())
   }
+  /*
+  // NOTE: annotated_rhs may start with 'yield'; yield_expr must start with 'yield'
+  assignment
+    : name ':' expression ('=' annotated_rhs )?
+    | ('(' single_target ')'
+         | single_subscript_attribute_target) ':' expression ('=' annotated_rhs )?
+    | (star_targets '=' )+ (yield_expr | star_expressions) TYPE_COMMENT?
+    | single_target augassign (yield_expr | star_expressions);
+  */
+  visitAssignment(ctx: AssignmentContext): string {
+    const augassign = ctx.augassign()
+    // name ':' expression ('=' annotated_rhs )?
+    // ('(' single_target ')'
+    // | single_subscript_attribute_target) ':' expression ('=' annotated_rhs )?
+    // (star_targets '=' )+ (yield_expr | star_expressions) TYPE_COMMENT?
+    if (augassign != null) {
+        // single_target augassign (yield_expr | star_expressions)
+        // TODO: Add yield_expr / star_expressions
+        // augassign needs to be mapped to normal operator
+        const sin_target = ctx.single_target()
+        return `${this.visit(sin_target)} = ${this.visit(sin_target)} ${this.visit(augassign)} `
+    }
+    throw Error("TODO: Unimplemented")
+  }
+  /*
+  augassign
+    : '+='
+    | '-='
+    | '*='
+    | '@='
+    | '/='
+    | '%='
+    | '&='
+    | '|='
+    | '^='
+    | '<<='
+    | '>>='
+    | '**='
+    | '//=';
+  */
+  visitAugassign(ctx: AugassignContext): string {
+    const s = ctx.getChild(0) as TerminalNode
+    switch (s.symbol.type) {
+        case PythonLexer.PLUSEQUAL:
+            return '+'
+        case PythonLexer.MINEQUAL:
+            return '-'
+        case PythonLexer.STAREQUAL:
+            return '*'
+        case PythonLexer.SLASHEQUAL:
+            return '/'
+        case PythonLexer.PERCENTEQUAL:
+            return '%'
+        case PythonLexer.AMPEREQUAL:
+            // TODO: We should modify the grammar to support this
+            // eg augassign : {TOKEN} (yield_expr | star_expressions);
+            throw Error('TODO: Not implemented yet &')
+        case PythonLexer.VBAREQUAL:
+            throw Error('TODO: Not implemented yet |')
+        case PythonLexer.CIRCUMFLEXEQUAL:
+            throw Error('TODO: Not implemented yet ^')
+        case PythonLexer.LEFTSHIFTEQUAL:
+            throw Error('TODO: Not implemented yet <<')
+        case PythonLexer.RIGHTSHIFTEQUAL:
+            throw Error('TODO: Not implemented yet >> ')
+        case PythonLexer.DOUBLESTAREQUAL:
+            throw Error('TODO: Not implemented yet **')
+        case PythonLexer.DOUBLESLASHEQUAL:
+            throw Error('TODO: Not implemented yet //')
+        default:
+            throw Error("Unknown token")
+    }
+  }
 }
 
 // Usunac break
@@ -457,30 +531,7 @@ func_type: '(' type_expressions? ')' '->' expression NEWLINE* EOF;
 // SIMPLE STATEMENTS
 // =================
 
-// NOTE: annotated_rhs may start with 'yield'; yield_expr must start with 'yield'
-assignment
-    : name ':' expression ('=' annotated_rhs )?
-    | ('(' single_target ')'
-         | single_subscript_attribute_target) ':' expression ('=' annotated_rhs )?
-    | (star_targets '=' )+ (yield_expr | star_expressions) TYPE_COMMENT?
-    | single_target augassign (yield_expr | star_expressions);
-
 annotated_rhs: yield_expr | star_expressions;
-
-augassign
-    : '+='
-    | '-='
-    | '*='
-    | '@='
-    | '/='
-    | '%='
-    | '&='
-    | '|='
-    | '^='
-    | '<<='
-    | '>>='
-    | '**='
-    | '//=';
 
 raise_stmt
     : 'raise' (expression ('from' expression )?)?
