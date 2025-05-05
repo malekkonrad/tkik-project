@@ -35,7 +35,6 @@ options { superClass=PythonLexerBase; }
 tokens {
     ENCODING // https://docs.python.org/3.13/reference/lexical_analysis.html#encoding-declarations
   , INDENT, DEDENT // https://docs.python.org/3.13/reference/lexical_analysis.html#indentation
-  , TYPE_COMMENT // not supported, only for compatibility with the PythonParser.g4 grammar
   , FSTRING_START, FSTRING_MIDDLE, FSTRING_END // https://peps.python.org/pep-0701/#specification
 }
 

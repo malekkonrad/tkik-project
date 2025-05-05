@@ -258,7 +258,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
                 case PythonLexer.BREAK:
                     return 'break';
                 case PythonLexer.CONTINUE:
-                    throw Error("TODO: Consider continue")
+                    throw Error("TODO: Consider continue support")
             }
         }
         return this.visit(ch)
@@ -283,9 +283,8 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     /*
     assignment
         : name ':' expression ('=' annotated_rhs )?
-        | ('(' single_target ')'
-            | single_subscript_attribute_target) ':' expression ('=' annotated_rhs )?
-        | (star_targets '=' )+ (yield_expr | star_expressions) TYPE_COMMENT?
+        | ('(' single_target ')' | single_subscript_attribute_target) ':' expression ('=' annotated_rhs )?
+        | (star_targets '=' )+ (yield_expr | star_expressions)
         | single_target augassign (yield_expr | star_expressions);
     */
     visitAssignment(ctx: AssignmentContext): string {
@@ -618,28 +617,28 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     }
     /*
     param_no_default
-    : param ','? TYPE_COMMENT?;
+    : param ','?;
     */
     visitParam_no_default(ctx: Param_no_defaultContext): string {
         return 'TODO param_no_default' // TODO
     }
     /*
     param_no_default_star_annotation
-    : param_star_annotation ','? TYPE_COMMENT?;
+    : param_star_annotation ','?;
     */
     visitParam_no_default_star_annotation(ctx: Param_no_default_star_annotationContext): string {
         return 'TODO param_no_default_star_annotation' // TODO
     }
     /*
     param_with_default
-    : param default_assignment ','? TYPE_COMMENT?;
+    : param default_assignment ','?;
     */
     visitParam_with_default(ctx: Param_with_defaultContext): string {
         return 'TODO param_with_default' // TODO
     }
     /*
     param_maybe_default
-    : param default_assignment? ','? TYPE_COMMENT?;
+    : param default_assignment? ','?;
     */
     visitParam_maybe_default(ctx: Param_maybe_defaultContext): string {
         return 'TODO param_maybe_default' // TODO
@@ -733,7 +732,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     // -------------
     /*
     for_stmt
-    : 'async'? 'for' star_targets 'in' star_expressions ':' TYPE_COMMENT? block else_block?;
+    : 'async'? 'for' star_targets 'in' star_expressions ':' block else_block?;
     */
     visitFor_stmt(ctx: For_stmtContext): string {
         return 'TODO for_stmt' // TODO
@@ -743,9 +742,9 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     // --------------
     /*
     with_stmt
-    : 'with' '(' with_item (',' with_item)* ','? ')' ':' TYPE_COMMENT? block
+    : 'with' '(' with_item (',' with_item)* ','? ')' ':' block
     | 'async' 'with' '(' with_item (',' with_item)* ','? ')' ':' block
-    | 'async'? 'with' with_item (',' with_item)* ':' TYPE_COMMENT? block
+    | 'async'? 'with' with_item (',' with_item)* ':' block
     ;
     */
     visitWith_stmt(ctx: With_stmtContext): string {
@@ -1784,11 +1783,11 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : args ','?;
     */
     visitArguments(ctx: ArgumentsContext): string {
-        return 'TODO arguments' // TODO
+        return this.visit(ctx.args()) // ',' is ignored by Python compiler
     }
     /*
     args
-    : (starred_expression | ( assignment_expression | expression)) (',' (starred_expression | ( assignment_expression | expression)))* (',' kwargs )?
+    : (starred_expression | (assignment_expression | expression)) (',' (starred_expression | ( assignment_expression | expression)))* (',' kwargs )?
     | kwargs;
     */
     visitArgs(ctx: ArgsContext): string {
@@ -1945,19 +1944,6 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             etc.
         */
         return 'TODO type_expressions' // TODO
-    }
-    /*
-    func_type_comment
-    : NEWLINE TYPE_COMMENT   // Must be followed by indented block
-    | TYPE_COMMENT;
-    */
-    visitFunc_type_comment(ctx: Func_type_commentContext): string {
-        /* eg.
-        def add(x, y):
-            # type: (int, int) -> int // Legacy Python types
-            return x + y
-        */
-        return `--[[ Legacy Type: ${ctx.TYPE_COMMENT().getText()} ]]`
     }
     /*
     name_except_underscore

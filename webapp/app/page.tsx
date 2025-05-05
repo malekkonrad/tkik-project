@@ -28,6 +28,10 @@ const parsers = {
   'ours': OursPythonParser
 }
 
+const visitors = {
+  'full': LuaPythonVisitor
+}
+
 const addURLParams = (url: string, params: { [Param: string]: string }) => {
   const u = new URL(url)
   for (const [param, value] of Object.entries(params)) {
@@ -48,30 +52,26 @@ export default function Home() {
   const [dTree, setDTree] = React.useState('')
   React.useEffect(() => {
     try {
-      console.log("Code:", code)
       const chars = new CharStream(code); // replace this with a FileStream as required
-      console.log("Characters:", chars)
       const lexerClass = (lexers as any)[version] // eslint-disable-line
       const parserClass = (parsers as any)[version] // eslint-disable-line
+      const visitorClass = (visitors as any)[version] // eslint-disable-line
       const lexer = new lexerClass(chars);
-      console.log("Lexer", lexer);
       const tokens = new CommonTokenStream(lexer);
-      console.log("Tokens", tokens);
       const parser = new parserClass(tokens);
-      console.log("Parser", parser);
       const tree = parser.program();
       
       console.log("Tree", tree);
       console.log(tree.toStringTree(parser.ruleNames));
       setDTree(tree.toStringTree(parser.ruleNames))
 
-      if (version == 'full') {
-        const luaVisitor = new LuaPythonVisitor()
+      if (visitorClass != null) {
+        const luaVisitor = new visitorClass()
         const res = luaVisitor.visit(tree)
         console.log("Result", res)
         setResult((res != null) ? addHeader(code, res) : '-- No result')
       } else {
-        setResult("-- Can only parse full grammar")
+        setResult("-- Can't parse this grammar")
       }
     } catch (error: unknown) {
       if (error instanceof Error) {

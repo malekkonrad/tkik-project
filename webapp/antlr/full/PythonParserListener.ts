@@ -4,12 +4,8 @@ import {ParseTreeListener} from "antlr4";
 
 
 import { ProgramContext } from "./PythonParser.js";
-import { InteractiveContext } from "./PythonParser.js";
-import { EvalContext } from "./PythonParser.js";
-import { Func_typeContext } from "./PythonParser.js";
 import { StatementsContext } from "./PythonParser.js";
 import { StatementContext } from "./PythonParser.js";
-import { Statement_newlineContext } from "./PythonParser.js";
 import { Simple_stmtsContext } from "./PythonParser.js";
 import { Simple_stmtContext } from "./PythonParser.js";
 import { Compound_stmtContext } from "./PythonParser.js";
@@ -196,7 +192,6 @@ import { Del_targetsContext } from "./PythonParser.js";
 import { Del_targetContext } from "./PythonParser.js";
 import { Del_t_atomContext } from "./PythonParser.js";
 import { Type_expressionsContext } from "./PythonParser.js";
-import { Func_type_commentContext } from "./PythonParser.js";
 import { Name_except_underscoreContext } from "./PythonParser.js";
 import { NameContext } from "./PythonParser.js";
 
@@ -217,36 +212,6 @@ export default class PythonParserListener extends ParseTreeListener {
 	 */
 	exitProgram?: (ctx: ProgramContext) => void;
 	/**
-	 * Enter a parse tree produced by `PythonParser.interactive`.
-	 * @param ctx the parse tree
-	 */
-	enterInteractive?: (ctx: InteractiveContext) => void;
-	/**
-	 * Exit a parse tree produced by `PythonParser.interactive`.
-	 * @param ctx the parse tree
-	 */
-	exitInteractive?: (ctx: InteractiveContext) => void;
-	/**
-	 * Enter a parse tree produced by `PythonParser.eval`.
-	 * @param ctx the parse tree
-	 */
-	enterEval?: (ctx: EvalContext) => void;
-	/**
-	 * Exit a parse tree produced by `PythonParser.eval`.
-	 * @param ctx the parse tree
-	 */
-	exitEval?: (ctx: EvalContext) => void;
-	/**
-	 * Enter a parse tree produced by `PythonParser.func_type`.
-	 * @param ctx the parse tree
-	 */
-	enterFunc_type?: (ctx: Func_typeContext) => void;
-	/**
-	 * Exit a parse tree produced by `PythonParser.func_type`.
-	 * @param ctx the parse tree
-	 */
-	exitFunc_type?: (ctx: Func_typeContext) => void;
-	/**
 	 * Enter a parse tree produced by `PythonParser.statements`.
 	 * @param ctx the parse tree
 	 */
@@ -266,16 +231,6 @@ export default class PythonParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitStatement?: (ctx: StatementContext) => void;
-	/**
-	 * Enter a parse tree produced by `PythonParser.statement_newline`.
-	 * @param ctx the parse tree
-	 */
-	enterStatement_newline?: (ctx: Statement_newlineContext) => void;
-	/**
-	 * Exit a parse tree produced by `PythonParser.statement_newline`.
-	 * @param ctx the parse tree
-	 */
-	exitStatement_newline?: (ctx: Statement_newlineContext) => void;
 	/**
 	 * Enter a parse tree produced by `PythonParser.simple_stmts`.
 	 * @param ctx the parse tree
@@ -2136,16 +2091,6 @@ export default class PythonParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitType_expressions?: (ctx: Type_expressionsContext) => void;
-	/**
-	 * Enter a parse tree produced by `PythonParser.func_type_comment`.
-	 * @param ctx the parse tree
-	 */
-	enterFunc_type_comment?: (ctx: Func_type_commentContext) => void;
-	/**
-	 * Exit a parse tree produced by `PythonParser.func_type_comment`.
-	 * @param ctx the parse tree
-	 */
-	exitFunc_type_comment?: (ctx: Func_type_commentContext) => void;
 	/**
 	 * Enter a parse tree produced by `PythonParser.name_except_underscore`.
 	 * @param ctx the parse tree

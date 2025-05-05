@@ -98,7 +98,7 @@ assignment
     : name ':' expression ('=' annotated_rhs )?
     | ('(' single_target ')'
          | single_subscript_attribute_target) ':' expression ('=' annotated_rhs )?
-    | (star_targets '=' )+ (yield_expr | star_expressions) TYPE_COMMENT?
+    | (star_targets '=' )+ (yield_expr | star_expressions)
     | single_target augassign (yield_expr | star_expressions);
 
 annotated_rhs: yield_expr | star_expressions;
@@ -194,8 +194,8 @@ function_def
     | function_def_raw;
 
 function_def_raw
-    : 'def' name type_params? '(' params? ')' ('->' expression )? ':' func_type_comment? block
-    | 'async' 'def' name type_params? '(' params? ')' ('->' expression )? ':' func_type_comment? block;
+    : 'def' name type_params? '(' params? ')' ('->' expression )? ':' block
+    | 'async' 'def' name type_params? '(' params? ')' ('->' expression )? ':' block;
 
 // Function parameters
 // -------------------
@@ -243,16 +243,16 @@ kwds
 //
 
 param_no_default
-    : param ','? TYPE_COMMENT?
+    : param ','?
     ;
 param_no_default_star_annotation
-    : param_star_annotation ','? TYPE_COMMENT?
+    : param_star_annotation ','?
     ;
 param_with_default
-    : param default_assignment ','? TYPE_COMMENT?
+    : param default_assignment ','?
     ;
 param_maybe_default
-    : param default_assignment? ','? TYPE_COMMENT?
+    : param default_assignment? ','?
     ;
 param: name annotation?;
 param_star_annotation: name star_annotation;
@@ -282,16 +282,16 @@ while_stmt
 // -------------
 
 for_stmt
-    : 'async'? 'for' star_targets 'in' star_expressions ':' TYPE_COMMENT? block else_block?
+    : 'async'? 'for' star_targets 'in' star_expressions ':' block else_block?
     ;
 
 // With statement
 // --------------
 
 with_stmt
-    : 'with' '(' with_item (',' with_item)* ','? ')' ':' TYPE_COMMENT? block
+    : 'with' '(' with_item (',' with_item)* ','? ')' ':' block
     | 'async' 'with' '(' with_item (',' with_item)* ','? ')' ':' block
-    | 'async'? 'with' with_item (',' with_item)* ':' TYPE_COMMENT? block
+    | 'async'? 'with' with_item (',' with_item)* ':' block
     ;
 
 with_item
@@ -870,10 +870,6 @@ type_expressions
     ;
 
 
-
-func_type_comment
-    : NEWLINE TYPE_COMMENT   // Must be followed by indented block
-    | TYPE_COMMENT;
 
 // *** related to soft keywords: https://docs.python.org/3.13/reference/lexical_analysis.html#soft-keywords
 name_except_underscore

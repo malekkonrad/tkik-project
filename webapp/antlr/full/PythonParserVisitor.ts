@@ -4,12 +4,8 @@ import {ParseTreeVisitor} from 'antlr4';
 
 
 import { ProgramContext } from "./PythonParser.js";
-import { InteractiveContext } from "./PythonParser.js";
-import { EvalContext } from "./PythonParser.js";
-import { Func_typeContext } from "./PythonParser.js";
 import { StatementsContext } from "./PythonParser.js";
 import { StatementContext } from "./PythonParser.js";
-import { Statement_newlineContext } from "./PythonParser.js";
 import { Simple_stmtsContext } from "./PythonParser.js";
 import { Simple_stmtContext } from "./PythonParser.js";
 import { Compound_stmtContext } from "./PythonParser.js";
@@ -196,7 +192,6 @@ import { Del_targetsContext } from "./PythonParser.js";
 import { Del_targetContext } from "./PythonParser.js";
 import { Del_t_atomContext } from "./PythonParser.js";
 import { Type_expressionsContext } from "./PythonParser.js";
-import { Func_type_commentContext } from "./PythonParser.js";
 import { Name_except_underscoreContext } from "./PythonParser.js";
 import { NameContext } from "./PythonParser.js";
 
@@ -216,24 +211,6 @@ export default class PythonParserVisitor<Result> extends ParseTreeVisitor<Result
 	 */
 	visitProgram?: (ctx: ProgramContext) => Result;
 	/**
-	 * Visit a parse tree produced by `PythonParser.interactive`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitInteractive?: (ctx: InteractiveContext) => Result;
-	/**
-	 * Visit a parse tree produced by `PythonParser.eval`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitEval?: (ctx: EvalContext) => Result;
-	/**
-	 * Visit a parse tree produced by `PythonParser.func_type`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitFunc_type?: (ctx: Func_typeContext) => Result;
-	/**
 	 * Visit a parse tree produced by `PythonParser.statements`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -245,12 +222,6 @@ export default class PythonParserVisitor<Result> extends ParseTreeVisitor<Result
 	 * @return the visitor result
 	 */
 	visitStatement?: (ctx: StatementContext) => Result;
-	/**
-	 * Visit a parse tree produced by `PythonParser.statement_newline`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitStatement_newline?: (ctx: Statement_newlineContext) => Result;
 	/**
 	 * Visit a parse tree produced by `PythonParser.simple_stmts`.
 	 * @param ctx the parse tree
@@ -1367,12 +1338,6 @@ export default class PythonParserVisitor<Result> extends ParseTreeVisitor<Result
 	 * @return the visitor result
 	 */
 	visitType_expressions?: (ctx: Type_expressionsContext) => Result;
-	/**
-	 * Visit a parse tree produced by `PythonParser.func_type_comment`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitFunc_type_comment?: (ctx: Func_type_commentContext) => Result;
 	/**
 	 * Visit a parse tree produced by `PythonParser.name_except_underscore`.
 	 * @param ctx the parse tree
