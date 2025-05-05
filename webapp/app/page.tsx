@@ -27,6 +27,14 @@ const parsers = {
   'ours': OursPythonParser
 }
 
+const addURLParams = (url: string, params: { [Param: string]: string }) => {
+  const u = new URL(url)
+  for (const [param, value] of Object.entries(params)) {
+    u.searchParams.set(param, value)
+  }
+  return u.toString()
+}
+
 export default function Home() {
   const [code, setCode] = React.useState('')
   const [version, setVersion] = React.useState('full')
@@ -59,10 +67,28 @@ export default function Home() {
       } else {
         setResult("-- Can only parse full grammar")
       }
-    } catch {
-      setResult("-- Failed to parse :(")
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setResult(`-- Failed to parse :(\n--${error.message}`)
+      }
     }
   }, [ code, version ])
+
+  React.useEffect(() => {
+    const luaResultEditor = document.getElementById('lua-result-editor')
+    if (luaResultEditor != null && luaResultEditor instanceof HTMLIFrameElement && luaResultEditor.contentWindow != null) {
+      luaResultEditor.contentWindow.postMessage({
+        eventType: 'populateCode',
+        language: 'lua',
+        files: [
+          {
+            "name": "result.lua",
+            "content": result
+          }
+        ]
+      }, "*")
+    }
+  }, [ result ])
 
   return (
     <>
@@ -80,6 +106,30 @@ export default function Home() {
         {result}
       </SyntaxHighlighter>
       <p>{dTree}</p>
+      {/* Docs: https://onecompiler.com/apis/embed-editor */}
+      <iframe
+        frameBorder="0"
+        height="450px"
+        id='lua-result-editor'
+        src={
+          addURLParams('https://onecompiler.com/embed/lua', {
+            hideLanguageSelection: 'true',
+            hideNew: 'true',
+            hideRun: 'false',
+            hideNewFileOption: 'true',
+            disableCopyPaste: 'false',
+            disableAutoComplete: 'true',
+            hideStdin: 'false',
+            hideResult: 'false',
+            hideTitle: 'true',
+            theme: 'dark',
+            listenToEvents: 'true',
+            codeChangeEvent: 'true',
+            hideEditorOptions: 'true'
+          })
+        }
+        width="100%"
+      />
     </>
   );
 }
