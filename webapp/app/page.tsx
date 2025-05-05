@@ -2,6 +2,7 @@
 // import Image from "next/image";
 // import antlr4 from 'antlr4'
 
+import * as CryptoJS from 'crypto-js'
 import * as React from 'react';
 import TextField from '@mui/material/TextField'
 import Select, { SelectChangeEvent } from '@mui/material/Select'
@@ -35,6 +36,11 @@ const addURLParams = (url: string, params: { [Param: string]: string }) => {
   return u.toString()
 }
 
+const addHeader = (src: string, res: string) => {
+  const srcHash = CryptoJS.SHA256(src).toString(CryptoJS.enc.Hex);
+  return `-- PyToL\n-- Generated on: ${new Date().toISOString()}\n-- Source hash: ${srcHash}\n${res}`
+}
+
 export default function Home() {
   const [code, setCode] = React.useState('')
   const [version, setVersion] = React.useState('full')
@@ -63,13 +69,14 @@ export default function Home() {
         const luaVisitor = new LuaPythonVisitor()
         const res = luaVisitor.visit(tree)
         console.log("Result", res)
-        setResult(res ?? '-- No result')
+        setResult((res != null) ? addHeader(code, res) : '-- No result')
       } else {
         setResult("-- Can only parse full grammar")
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
         setResult(`-- Failed to parse :(\n--${error.message}`)
+        console.warn(error.stack ?? 'No error trace')
       }
     }
   }, [ code, version ])
@@ -90,6 +97,7 @@ export default function Home() {
     }
   }, [ result ])
 
+  {/* ErrorListener https://tomassetti.me/antlr-mega-tutorial/#chapter19 */}
   return (
     <>
       <Select

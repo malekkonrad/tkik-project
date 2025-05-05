@@ -1938,6 +1938,12 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | '**' expression;
     */
     visitType_expressions(ctx: Type_expressionsContext): string {
+        /* eg.
+            Callable[[int, str], bool]   (`int, str`)
+            Callable[[int, *str], bool]   (`int, *str`)
+            Callable[[int, str, **Any], bool]   (`int, str, **Any`)
+            etc.
+        */
         return 'TODO type_expressions' // TODO
     }
     /*
@@ -1946,7 +1952,12 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | TYPE_COMMENT;
     */
     visitFunc_type_comment(ctx: Func_type_commentContext): string {
-        return 'TODO func_type_comment' // TODO
+        /* eg.
+        def add(x, y):
+            # type: (int, int) -> int // Legacy Python types
+            return x + y
+        */
+        return `--[[ Legacy Type: ${ctx.TYPE_COMMENT().getText()} ]]`
     }
     /*
     name_except_underscore
@@ -1956,13 +1967,15 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | NAME_OR_CASE;
     */
     visitName_except_underscore(ctx: Name_except_underscoreContext): string {
-        return this.visit(ctx.getChild(0))
+        return ctx.getChild(0).getText() // Return raw text
     }
     /*
     name: NAME_OR_WILDCARD | name_except_underscore;
     */
     visitName(ctx: NameContext): string {
-        return this.visit(ctx.getChild(0))
+        const nor = ctx.NAME_OR_WILDCARD()
+        if (nor != null) return nor.getText() // '_' - also works in lua
+        return this.visit(ctx.name_except_underscore())
     }
 }
 
