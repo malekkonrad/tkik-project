@@ -190,7 +190,8 @@ import {
     Type_expressionsContext,
     Func_type_commentContext,
     Name_except_underscoreContext,
-    NameContext
+    NameContext,
+    As_patternContext
 } from "./PythonParser";
 import PythonParserVisitor from "./PythonParserVisitor";
 import PythonLexer from "./PythonLexer";
@@ -253,7 +254,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         if (ch instanceof TerminalNode) {
             switch (ch.symbol.type) {
                 case PythonLexer.PASS:
-                    return '';
+                    return ''; // in lua there is no pass (it'll just be an empty block)
                 case PythonLexer.BREAK:
                     return 'break';
                 case PythonLexer.CONTINUE:
@@ -305,7 +306,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     annotated_rhs: yield_expr | star_expressions;
     */
     visitAnnotated_rhs(ctx: Annotated_rhsContext): string {
-        return 'TODO' // TODO
+        return 'TODO annotated_rhs' // TODO
     }
     /*
     augassign
@@ -324,6 +325,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | '//=';
     */
     visitAugassign(ctx: AugassignContext): string {
+        // This returns normal operator since lua does not support operator with assignment
         const s = ctx.getChild(0) as TerminalNode
         switch (s.symbol.type) {
             case PythonLexer.PLUSEQUAL:
@@ -339,21 +341,21 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             case PythonLexer.AMPEREQUAL:
                 // TODO: We should modify the grammar to support this
                 // eg augassign : {TOKEN} (yield_expr | star_expressions);
-                throw Error('TODO: Not implemented yet &')
+                throw Error('TODO: Not implemented yet augassign &')
             case PythonLexer.VBAREQUAL:
-                throw Error('TODO: Not implemented yet |')
+                throw Error('TODO: Not implemented yet augassign |')
             case PythonLexer.CIRCUMFLEXEQUAL:
-                throw Error('TODO: Not implemented yet ^')
+                throw Error('TODO: Not implemented yet augassign ^')
             case PythonLexer.LEFTSHIFTEQUAL:
-                throw Error('TODO: Not implemented yet <<')
+                throw Error('TODO: Not implemented yet augassign <<')
             case PythonLexer.RIGHTSHIFTEQUAL:
-                throw Error('TODO: Not implemented yet >> ')
+                throw Error('TODO: Not implemented yet augassign >> ')
             case PythonLexer.DOUBLESTAREQUAL:
-                throw Error('TODO: Not implemented yet **')
+                throw Error('TODO: Not implemented yet augassign **')
             case PythonLexer.DOUBLESLASHEQUAL:
-                throw Error('TODO: Not implemented yet //')
+                throw Error('TODO: Not implemented yet augassign //')
             default:
-                throw Error("Unknown token")
+                throw Error("Unknown augassign token")
         }
     }
     /*
@@ -369,7 +371,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : 'raise' (expression ('from' expression )?)?;
     */
     visitRaise_stmt(ctx: Raise_stmtContext): string {
-        return 'TODO' // TODO
+        return 'TODO raise_stmt' // TODO
     }
     /*
     global_stmt: 'global' name (',' name)*;
@@ -377,14 +379,14 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     visitGlobal_stmt(ctx: Global_stmtContext): string {
         // Global does not exist in lua
         // TODO: Need to figure out how to handle local variables
-        return `--[[ global ${ctx.name_list().map(x => this.visit(x)).join(',')} ]]`
+        return `--[[ TODO global ${ctx.name_list().map(x => this.visit(x)).join(',')} ]]`
     }
     /*
     nonlocal_stmt: 'nonlocal' name (',' name)*;
     */
     visitNonlocal_stmt(ctx: Nonlocal_stmtContext): string {
         // TODO: What's nonlocal?
-        return `--[[ nonlocal ${ctx.name_list().map(x => this.visit(x)).join(',')} ]]`
+        return `--[[ TODO nonlocal ${ctx.name_list().map(x => this.visit(x)).join(',')} ]]`
     }
     /*
     del_stmt
@@ -398,7 +400,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     yield_stmt: yield_expr;
     */
     visitYield_stmt(ctx: Yield_stmtContext): string {
-        return 'TODO' // TODO
+        return 'TODO yield_stmt' // TODO
     }
     /*
     assert_stmt: 'assert' expression (',' expression )?;
@@ -424,7 +426,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     import_name: 'import' dotted_as_names;
     */
     visitImport_name(ctx: Import_nameContext): string {
-        return 'TODO' // TODO
+        return 'TODO import_name' // TODO
     }
     /*
     import_from
@@ -432,7 +434,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | 'from' ('.' | '...')+ 'import' import_from_targets;
     */
     visitImport_from(ctx: Import_fromContext): string {
-        return 'TODO' // TODO
+        return 'TODO import_from' // TODO
     }
     /*
     import_from_targets
@@ -441,35 +443,35 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | '*';
     */
     visitImport_from_targets(ctx: Import_from_targetsContext): string {
-        return 'TODO' // TODO
+        return 'TODO import_from_targets' // TODO
     }
     /*
     import_from_as_names
     : import_from_as_name (',' import_from_as_name)*;
     */
     visitImport_from_as_names(ctx: Import_from_as_namesContext): string {
-        return 'TODO' // TODO
+        return 'TODO import_from_as_names' // TODO
     }
     /*
     import_from_as_name
     : name ('as' name )?;
     */
     visitImport_from_as_name(ctx: Import_from_as_nameContext): string {
-        return 'TODO' // TODO
+        return 'TODO import_from_as_name' // TODO
     }
     /*
     dotted_as_names
     : dotted_as_name (',' dotted_as_name)*;
     */
     visitDotted_as_names(ctx: Dotted_as_namesContext): string {
-        return 'TODO' // TODO
+        return 'TODO dotted_as_names' // TODO
     }
     /*
     dotted_as_name
     : dotted_name ('as' name )?;
     */
     visitDotted_as_name(ctx: Dotted_as_nameContext): string {
-        return 'TODO' // TODO
+        return 'TODO dotted_as_name' // TODO
     }
     /*
     dotted_name
@@ -477,7 +479,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | name;
     */
     visitDotted_name(ctx: Dotted_nameContext): string {
-        return 'TODO' // TODO
+        return 'TODO dotted_name' // TODO
     }
     // ===================
     // COMPOUND STATEMENTS
@@ -491,6 +493,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | simple_stmts;
     */
     visitBlock(ctx: BlockContext): string {
+        // TODO: delete do when it's not necessary
         let result = 'do\n'
         const stmts = ctx.statements()
         const simple_stmts = ctx.simple_stmts()
@@ -506,7 +509,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     decorators: ('@' named_expression NEWLINE )+;
     */
     visitDecorators(ctx: DecoratorsContext): string {
-        return 'TODO' // TODO
+        return 'TODO decorators' // TODO
     }
     // -----------------
     // Class definitions
@@ -517,14 +520,21 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | class_def_raw;
     */
     visitClass_def(ctx: Class_defContext): string {
-        return 'TODO' // TODO
+        const cdr = ctx.class_def_raw()
+        // TODO: Handle decorators
+        return this.visit(cdr)
     }
     /*
     class_def_raw
     : 'class' name type_params? ('(' arguments? ')' )? ':' block;
     */
     visitClass_def_raw(ctx: Class_def_rawContext): string {
-        return 'TODO' // TODO
+        // TODO: Handle type_params and arguments
+        // TODO: Why is here a standard block???
+        let result = `${this.visit(ctx.name())} = setmetatable({\n`
+        result += '\n}, {\n'
+        result += '\n})'
+        return result
     }
     // --------------------
     // Function definitions
@@ -573,21 +583,21 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | star_etc;
     */
     visitParameters(ctx: ParametersContext): string {
-        return 'TODO' // TODO
+        return 'TODO parameters' // TODO
     }
     /*
     slash_no_default
         : param_no_default+ '/' ','?;
     */
     visitSlash_no_default(ctx: Slash_no_defaultContext): string {
-        return 'TODO' // TODO
+        return 'TODO slash_no_default' // TODO
     }
     /*
     slash_with_default
     : param_no_default* param_with_default+ '/' ','?;
     */
     visitSlash_with_default(ctx: Slash_with_defaultContext): string {
-        return 'TODO' // TODO
+        return 'TODO slash_with_default' // TODO
     }
     /*
     star_etc
@@ -597,72 +607,72 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | kwds;
     */
     visitStar_etc(ctx: Star_etcContext): string {
-        return 'TODO' // TODO
+        return 'TODO star_etc' // TODO
     }
     /*
     kwds
     : '**' param_no_default;
     */
     visitKwds(ctx: KwdsContext): string {
-        return 'TODO' // TODO
+        return 'TODO kwds' // TODO
     }
     /*
     param_no_default
     : param ','? TYPE_COMMENT?;
     */
     visitParam_no_default(ctx: Param_no_defaultContext): string {
-        return 'TODO' // TODO
+        return 'TODO param_no_default' // TODO
     }
     /*
     param_no_default_star_annotation
     : param_star_annotation ','? TYPE_COMMENT?;
     */
     visitParam_no_default_star_annotation(ctx: Param_no_default_star_annotationContext): string {
-        return 'TODO' // TODO
+        return 'TODO param_no_default_star_annotation' // TODO
     }
     /*
     param_with_default
     : param default_assignment ','? TYPE_COMMENT?;
     */
     visitParam_with_default(ctx: Param_with_defaultContext): string {
-        return 'TODO' // TODO
+        return 'TODO param_with_default' // TODO
     }
     /*
     param_maybe_default
     : param default_assignment? ','? TYPE_COMMENT?;
     */
     visitParam_maybe_default(ctx: Param_maybe_defaultContext): string {
-        return 'TODO' // TODO
+        return 'TODO param_maybe_default' // TODO
     }
     /*
     param: name annotation?;
     */
     visitParam(ctx: ParamContext): string {
-        return 'TODO' // TODO
+        return 'TODO param' // TODO
     }
     /*
     param_star_annotation: name star_annotation;
     */
     visitParam_star_annotation(ctx: Param_star_annotationContext): string {
-        return 'TODO' // TODO   
+        return 'TODO param_star_annotation' // TODO   
     }
     /*
     annotation: ':' expression;
     */
     visitAnnotation(ctx: AnnotationContext): string {
-        return 'TODO' // TODO
+        return 'TODO annotation' // TODO
     }
     /*
     star_annotation: ':' star_expression;
     */
     visitStar_annotation(ctx: Star_annotationContext): string {
-        return 'TODO' // TODO
+        return 'TODO star_annotation' // TODO
     }
     /*
     default_assignment: '=' expression;
     */
     visitDefault_assignment(ctx: Default_assignmentContext): string {
-        return 'TODO' // TODO
+        return 'TODO default_assignment' // TODO
     }
     // ------------
     // If statement
@@ -726,7 +736,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : 'async'? 'for' star_targets 'in' star_expressions ':' TYPE_COMMENT? block else_block?;
     */
     visitFor_stmt(ctx: For_stmtContext): string {
-        return 'TODO' // TODO
+        return 'TODO for_stmt' // TODO
     }
     // --------------
     // With statement
@@ -739,14 +749,14 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     ;
     */
     visitWith_stmt(ctx: With_stmtContext): string {
-        return 'TODO' // TODO
+        return 'TODO with_stmt' // TODO
     }
     /*
     with_item
     : expression ('as' star_target)?;
     */
     visitWith_item(ctx: With_itemContext): string {
-        return 'TODO' // TODO
+        return 'TODO with_item' // TODO
     }
     // -------------
     // Try statement
@@ -758,7 +768,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | 'try' ':' block except_star_block+ else_block? finally_block?;
     */
     visitTry_stmt(ctx: Try_stmtContext): string {
-        return 'TODO' // TODO
+        return 'TODO try_stmt' // TODO
     }
     // ----------------
     // Except statement
@@ -768,21 +778,21 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : 'except' (expression ('as' name )?)? ':' block;
     */
     visitExcept_block(ctx: Except_blockContext): string {
-        return 'TODO' // TODO
+        return 'TODO except_block' // TODO
     }
     /*
     except_star_block
     : 'except' '*' expression ('as' name )? ':' block;
     */
     visitExcept_star_block(ctx: Except_star_blockContext): string {
-        return 'TODO' // TODO
+        return 'TODO except_star_block' // TODO
     }
     /*
     finally_block
     : 'finally' ':' block;
     */
     visitFinally_block(ctx: Finally_blockContext): string {
-        return 'TODO' // TODO
+        return 'TODO finally_block' // TODO
     }
     // ---------------
     // Match statement
@@ -792,7 +802,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : 'match' subject_expr ':' NEWLINE INDENT case_block+ DEDENT;
     */
     visitMatch_stmt(ctx: Match_stmtContext): string {
-        return 'TODO' // TODO
+        return 'TODO match_stmt' // TODO
     }
     /*
     subject_expr
@@ -800,20 +810,20 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | named_expression;
     */
     visitSubject_expr(ctx: Subject_exprContext): string {
-        return 'TODO' // TODO
+        return 'TODO subject_expr' // TODO
     }
     /*
     case_block
     : 'case' patterns guard? ':' block;
     */
     visitCase_block(ctx: Case_blockContext): string {
-        return 'TODO' // TODO
+        return 'TODO case_block' // TODO
     }
     /*
     guard: 'if' named_expression;
     */
     visitGuard(ctx: GuardContext): string {
-        return 'TODO' // TODO
+        return 'TODO guard' // TODO
     }
     /*
     patterns
@@ -821,7 +831,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | pattern;
     */
     visitPatterns(ctx: PatternsContext): string {
-        return 'TODO' // TODO
+        return 'TODO patterns' // TODO
     }
     /*
     pattern
@@ -829,14 +839,21 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | or_pattern;
     */
     visitPattern(ctx: PatternContext): string {
-        return 'TODO' // TODO
+        return 'TODO pattern' // TODO
     }
     /*
     as_pattern
     : or_pattern 'as' pattern_capture_target;
     */
+    visitAs_pattern(ctx: As_patternContext): string {
+        return 'TODO as_pattern' // TODO
+    }
+    /*
+    or_pattern
+    : closed_pattern ('|' closed_pattern)*;
+    */
     visitOr_pattern(ctx: Or_patternContext): string {
-        return 'TODO' // TODO
+        return 'TODO or_pattern' // TODO
     }
     /*
     closed_pattern
@@ -903,84 +920,90 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : signed_real_number ('+' | '-') imaginary_number;
     */
     visitComplex_number(ctx: Complex_numberContext): string {
-        return 'TODO' // TODO
+        return 'TODO complex_number' // TODO
     }
     /*
     signed_number
     : '-'? NUMBER;
     */
     visitSigned_number(ctx: Signed_numberContext): string {
-        return 'TODO' // TODO
+        const minus = ctx.MINUS()
+        const num = ctx.NUMBER()
+        if (minus != null) return `-${this.visit(num)}`
+        return this.visit(num)
     }
     /*
     signed_real_number
     : '-'? real_number;
     */
     visitSigned_real_number(ctx: Signed_real_numberContext): string {
-        return 'TODO' // TODO
+        const minus = ctx.MINUS()
+        const realnum = ctx.real_number()
+        if (minus != null) return `-${this.visit(realnum)}`
+        return this.visit(realnum)
     }
     /*
     real_number
     : NUMBER;
     */
     visitReal_number(ctx: Real_numberContext): string {
-        return 'TODO' // TODO
+        return ctx.NUMBER().getText()
     }
     /*
     imaginary_number
     : NUMBER;
     */
     visitImaginary_number(ctx: Imaginary_numberContext): string {
-        return 'TODO' // TODO
+        return 'TODO imaginary_number' // TODO
     }
     /*
     capture_pattern
     : pattern_capture_target;
     */
     visitCapture_pattern(ctx: Capture_patternContext): string {
-        return 'TODO' // TODO
+        return 'TODO capture_pattern' // TODO
     }
     /*
     pattern_capture_target
     : name_except_underscore;
     */
     visitPattern_capture_target(ctx: Pattern_capture_targetContext): string {
-        return 'TODO' // TODO
+        return 'TODO pattern_capture_target' // TODO
     }
     /*
     wildcard_pattern
     : '_';
     */
     visitWildcard_pattern(ctx: Wildcard_patternContext): string {
-        return 'TODO' // TODO
+        return 'TODO wildcard_pattern' // TODO
     }
     /*
     value_pattern
     : attr;
     */
     visitValue_pattern(ctx: Value_patternContext): string {
-        return 'TODO' // TODO
+        return 'TODO value_pattern' // TODO
     }
     /*
     attr
     : name ('.' name)+;
     */
     visitAttr(ctx: AttrContext): string {
-        return 'TODO' // TODO
+        return ctx.name_list().map(x => this.visit(x)).join('.')
     }
     /*
     name_or_attr
     : name ('.' name)*;
     */
     visitName_or_attr(ctx: Name_or_attrContext): string {
-        return 'TODO' // TODO
+        return ctx.name_list().map(x => this.visit(x)).join('.')
     }
     /*
     group_pattern
     : '(' pattern ')';
     */
     visitGroup_pattern(ctx: Group_patternContext): string {
-        return 'TODO' // TODO
+        return 'TODO group_pattern' // TODO
     }
     /*
     sequence_pattern
@@ -988,21 +1011,21 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | '(' open_sequence_pattern? ')';
     */
     visitSequence_pattern(ctx: Sequence_patternContext): string {
-        return 'TODO' // TODO
+        return 'TODO sequence_pattern' // TODO
     }
     /*
     open_sequence_pattern
     : maybe_star_pattern ',' maybe_sequence_pattern?;
     */
     visitOpen_sequence_pattern(ctx: Open_sequence_patternContext): string {
-        return 'TODO' // TODO
+        return 'TODO open_sequence_pattern' // TODO
     }
     /*
     maybe_sequence_pattern
     : maybe_star_pattern (',' maybe_star_pattern)* ','?;
     */
     visitMaybe_sequence_pattern(ctx: Maybe_sequence_patternContext): string {
-        return 'TODO' // TODO
+        return 'TODO maybe_sequence_pattern' // TODO
     }
     /*
     maybe_star_pattern
@@ -1010,14 +1033,14 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | pattern;
     */
     visitMaybe_star_pattern(ctx: Maybe_star_patternContext): string {
-        return 'TODO' // TODO
+        return 'TODO maybe_star_pattern' // TODO
     }
     /*
     star_pattern
     : '*' name;
     */
     visitStar_pattern(ctx: Star_patternContext): string {
-        return 'TODO' // TODO
+        return 'TODO star_pattern' // TODO
     }
     /*
     mapping_pattern
@@ -1026,56 +1049,56 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | LBRACE items_pattern (',' double_star_pattern)? ','? RBRACE;
     */
     visitMapping_pattern(ctx: Mapping_patternContext): string {
-        return 'TODO' // TODO
+        return 'TODO mapping_pattern' // TODO
     }
     /*
     items_pattern
     : key_value_pattern (',' key_value_pattern)*;
     */
     visitItems_pattern(ctx: Items_patternContext): string {
-        return 'TODO' // TODO
+        return 'TODO items_pattern' // TODO
     }
     /*
     key_value_pattern
     : (literal_expr | attr) ':' pattern;
     */
     visitKey_value_pattern(ctx: Key_value_patternContext): string {
-        return 'TODO' // TODO
+        return 'TODO key_value_pattern' // TODO
     }
     /*
     double_star_pattern
     : '**' pattern_capture_target;
     */
     visitDouble_star_pattern(ctx: Double_star_patternContext): string {
-        return 'TODO' // TODO
+        return 'TODO double_star_pattern' // TODO
     }
     /*
     class_pattern
     : name_or_attr '(' ((positional_patterns (',' keyword_patterns)? | keyword_patterns) ','?)? ')';
     */
     visitClass_pattern(ctx: Class_patternContext): string {
-        return 'TODO' // TODO
+        return 'TODO class_pattern' // TODO
     }
     /*
     positional_patterns
     : pattern (',' pattern)*;
     */
     visitPositional_patterns(ctx: Positional_patternsContext): string {
-        return 'TODO' // TODO
+        return 'TODO positional_patterns' // TODO
     }
     /*
     keyword_patterns
     : keyword_pattern (',' keyword_pattern)*;
     */
     visitKeyword_patterns(ctx: Keyword_patternsContext): string {
-        return 'TODO' // TODO
+        return 'TODO keyword_patterns' // TODO
     }
     /*
     keyword_pattern
     : name '=' pattern;
     */
     visitKeyword_pattern(ctx: Keyword_patternContext): string {
-        return 'TODO' // TODO
+        return 'TODO keyword_pattern' // TODO
     }
     // --------------
     // Type statement
@@ -1085,7 +1108,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : 'type' name type_params? '=' expression;
     */
     visitType_alias(ctx: Type_aliasContext): string {
-        return 'TODO' // TODO
+        return 'TODO type_alias' // TODO
     }
     // --------------------------
     // Type parameter declaration
@@ -1094,13 +1117,13 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     type_params: '[' type_param_seq  ']';
     */
     visitType_params(ctx: Type_paramsContext): string {
-        return 'TODO' // TODO
+        return 'TODO type_params' // TODO
     }
     /*
     type_param_seq: type_param (',' type_param)* ','?;
     */
     visitType_param_seq(ctx: Type_param_seqContext): string {
-        return 'TODO' // TODO
+        return 'TODO type_param_seq' // TODO
     }
     /*
     type_param
@@ -1109,25 +1132,25 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | '**' name type_param_default?;
     */
     visitType_param(ctx: Type_paramContext): string {
-        return 'TODO' // TODO
+        return 'TODO type_param' // TODO
     }
     /*
     type_param_bound: ':' expression;
     */
     visitType_param_bound(ctx: Type_param_boundContext): string {
-        return 'TODO' // TODO
+        return 'TODO type_param_bound' // TODO
     }
     /*
     type_param_default: '=' expression;
     */
     visitType_param_default(ctx: Type_param_defaultContext): string {
-        return 'TODO' // TODO
+        return 'TODO type_param_default' // TODO
     }
     /*
     type_param_starred_default: '=' star_expression;
     */
     visitType_param_starred_default(ctx: Type_param_starred_defaultContext): string {
-        return 'TODO' // TODO
+        return 'TODO type_param_starred_default' // TODO
     }
     // -----------
     // EXPRESSIONS
@@ -1137,7 +1160,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : expression (',' expression )* ','?;
     */
     visitExpressions(ctx: ExpressionsContext): string {
-        return 'TODO' // TODO
+        return 'TODO expressions' // TODO
     }
     /*
     expression
@@ -1145,14 +1168,14 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | lambdef;
     */
     visitExpression(ctx: ExpressionContext): string {
-        return 'TODO' // TODO
+        return 'TODO expression' // TODO
     }
     /*
     yield_expr
     : 'yield' ('from' expression | star_expressions?);
     */
     visitYield_expr(ctx: Yield_exprContext): string {
-        return 'TODO' // TODO
+        return 'TODO yield_expr' // TODO
     }
     /*
     star_expressions
@@ -1181,7 +1204,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     star_named_expressions: star_named_expression (',' star_named_expression)* ','?;
     */
     visitStar_named_expressions(ctx: Star_named_expressionsContext): string {
-        return 'TODO' // TODO
+        return 'TODO star_named_expressions' // TODO
     }
     /*
     star_named_expression
@@ -1189,14 +1212,14 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | named_expression;
     */
     visitStar_named_expression(ctx: Star_named_expressionContext): string {
-        return 'TODO' // TODO
+        return 'TODO star_named_expression' // TODO
     }
     /*
     assignment_expression
     : name ':=' expression;
     */
     visitAssignment_expression(ctx: Assignment_expressionContext): string {
-        return 'TODO' // TODO
+        return 'TODO assignment_expression' // TODO
     }
     /*
     named_expression
@@ -1204,7 +1227,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | expression;
     */
     visitNamed_expression(ctx: Named_expressionContext): string {
-        return 'TODO' // TODO
+        return 'TODO named_expression' // TODO
     }
     /*
     disjunction
@@ -1300,25 +1323,25 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     notin_bitwise_or: 'not' 'in' bitwise_or;
     */
     visitNotin_bitwise_or(ctx: Notin_bitwise_orContext): string {
-        return 'TODO' // TODO
+        return 'TODO notin_bitwise_or' // TODO
     }
     /*
     in_bitwise_or: 'in' bitwise_or;
     */
     visitIn_bitwise_or(ctx: In_bitwise_orContext): string {
-        return 'TODO' // TODO
+        return 'TODO in_bitwise_or' // TODO
     }
     /*
     isnot_bitwise_or: 'is' 'not' bitwise_or;
     */
     visitIsnot_bitwise_or(ctx: Isnot_bitwise_orContext): string {
-        return 'TODO' // TODO
+        return 'TODO isnot_bitwise_or' // TODO
     }
     /*
     is_bitwise_or: 'is' bitwise_or;
     */
     visitIs_bitwise_or(ctx: Is_bitwise_orContext): string {
-        return 'TODO' // TODO
+        return 'TODO is_bitwise_or' // TODO
     }
     // -----------------
     // Bitwise operators
@@ -1465,7 +1488,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | primary;
     */
     visitAwait_primary(ctx: Await_primaryContext): string {
-        return 'TODO' // TODO
+        return 'TODO await_primary' // TODO
     }
     /*
     primary
@@ -1473,7 +1496,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | atom;
     */
     visitPrimary(ctx: PrimaryContext): string {
-        return 'TODO' // TODO
+        return 'TODO primary' // TODO
     }
     /*
     slices
@@ -1481,7 +1504,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | (slice | starred_expression) (',' (slice | starred_expression))* ','?;
     */
     visitSlices(ctx: SlicesContext): string {
-        return 'TODO' // TODO
+        return 'TODO slices' // TODO
     }
     /*
     slice
@@ -1489,7 +1512,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | named_expression;
     */
     visitSlice(ctx: SliceContext): string {
-        return 'TODO' // TODO
+        return 'TODO slice' // TODO
     }
     /*
     atom
@@ -1505,14 +1528,14 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | '...';
     */
     visitAtom(ctx: AtomContext): string {
-        return 'TODO' // TODO
+        return 'TODO atom' // TODO
     }
     /*
     group
     : '(' (yield_expr | named_expression) ')';
     */
     visitGroup(ctx: GroupContext): string {
-        return 'TODO' // TODO
+        return 'TODO group' // TODO
     }
     // ----------------
     // Lambda functions
@@ -1540,21 +1563,21 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | lambda_star_etc;
     */
     visitLambda_parameters(ctx: Lambda_parametersContext): string {
-        return 'TODO' // TODO
+        return 'TODO lambda_parameters' // TODO
     }
     /*
     lambda_slash_no_default
     : lambda_param_no_default+ '/' ','?;
     */
     visitLambda_slash_no_default(ctx: Lambda_slash_no_defaultContext): string {
-        return 'TODO' // TODO
+        return 'TODO lambda_slash_no_default' // TODO
     }
     /*
     lambda_slash_with_default
     : lambda_param_no_default* lambda_param_with_default+ '/' ','?;
     */
     visitLambda_slash_with_default(ctx: Lambda_slash_with_defaultContext): string {
-        return 'TODO' // TODO
+        return 'TODO lambda_slash_with_default' // TODO
     }
     /*
     lambda_star_etc
@@ -1563,35 +1586,35 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | lambda_kwds;
     */
     visitLambda_star_etc(ctx: Lambda_star_etcContext): string {
-        return 'TODO' // TODO
+        return 'TODO lambda_star_etc' // TODO
     }
     /*
     lambda_kwds
     : '**' lambda_param_no_default;
     */
     visitLambda_kwds(ctx: Lambda_kwdsContext): string {
-        return 'TODO' // TODO
+        return 'TODO lambda_kwds' // TODO
     }
     /*
     lambda_param_no_default
     : lambda_param ','?;
     */
     visitLambda_param_no_default(ctx: Lambda_param_no_defaultContext): string {
-        return 'TODO' // TODO
+        return 'TODO lambda_param_no_default' // TODO
     }
     /*
     lambda_param_with_default
     : lambda_param default_assignment ','?;
     */
     visitLambda_param_with_default(ctx: Lambda_param_with_defaultContext): string {
-        return 'TODO' // TODO        
+        return 'TODO lambda_param_with_default' // TODO        
     }
     /*
     lambda_param_maybe_default
     : lambda_param default_assignment? ','?;
     */
     visitLambda_param_maybe_default(ctx: Lambda_param_maybe_defaultContext): string {
-        return 'TODO' // TODO
+        return 'TODO lambda_param_maybe_default' // TODO
     }
     /*
     lambda_param: name;
@@ -1608,28 +1631,28 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | FSTRING_MIDDLE;
     */
     visitFstring_middle(ctx: Fstring_middleContext): string {
-        return 'TODO' // TODO
+        return 'TODO fstring_middle' // TODO
     }
     /*
     fstring_replacement_field
     : LBRACE annotated_rhs '='? fstring_conversion? fstring_full_format_spec? RBRACE;
     */
     visitFstring_replacement_field(ctx: Fstring_replacement_fieldContext): string {
-        return 'TODO' // TODO
+        return 'TODO fstring_replacement_field' // TODO
     }
     /*
     fstring_conversion
     : '!' name;
     */
     visitFstring_conversion(ctx: Fstring_conversionContext): string {
-        return 'TODO' // TODO
+        return 'TODO fstring_conversion' // TODO
     }
     /*
     fstring_full_format_spec
     : ':' fstring_format_spec*;
     */
     visitFstring_full_format_spec(ctx: Fstring_full_format_specContext): string {
-        return 'TODO' // TODO
+        return 'TODO fstring_full_format_spec' // TODO
     }
     /*
     fstring_format_spec
@@ -1637,46 +1660,46 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | fstring_replacement_field;
     */
     visitFstring_format_spec(ctx: Fstring_format_specContext): string {
-        return 'TODO' // TODO
+        return 'TODO fstring_format_spec' // TODO
     }
     /*
     fstring
     : FSTRING_START fstring_middle* FSTRING_END;
     */
     visitFstring(ctx: FstringContext): string {
-        return 'TODO' // TODO
+        return 'TODO fstring' // TODO
     }
     /*
     string: STRING;
     */
     visitString(ctx: StringContext): string {
-        return 'TODO' // TODO
+        return 'TODO string' // TODO
     }
     /*
     strings: (fstring|string)+;
     */
     visitStrings(ctx: StringsContext): string {
-        return 'TODO' // TODO
+        return 'TODO strings' // TODO
     }
     /*
     list
     : '[' star_named_expressions? ']';
     */
     visitList(ctx: ListContext): string {
-        return 'TODO' // TODO
+        return 'TODO list' // TODO
     }
     /*
     tuple
     : '(' (star_named_expression ',' star_named_expressions?  )? ')';
     */
     visitTuple(ctx: TupleContext): string {
-        return 'TODO' // TODO
+        return 'TODO tuple' // TODO
     }
     /*
     set: LBRACE star_named_expressions RBRACE;
     */
     visitSet(ctx: SetContext): string {
-        return 'TODO' // TODO
+        return 'TODO set' // TODO
     }
     // -----
     // Dicts
@@ -1686,13 +1709,13 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : LBRACE double_starred_kvpairs? RBRACE;
     */
     visitDict(ctx: DictContext): string {
-        return 'TODO' // TODO
+        return 'TODO dict' // TODO
     }
     /*
     double_starred_kvpairs: double_starred_kvpair (',' double_starred_kvpair)* ','?;
     */
     visitDouble_starred_kvpairs(ctx: Double_starred_kvpairsContext): string {
-        return 'TODO' // TODO
+        return 'TODO double_starred_kvpairs' // TODO
     }
     /*
     double_starred_kvpair
@@ -1700,13 +1723,13 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | kvpair;
     */
     visitDouble_starred_kvpair(ctx: Double_starred_kvpairContext): string {
-        return 'TODO' // TODO
+        return 'TODO double_starred_kvpair' // TODO
     }
     /*
     kvpair: expression ':' expression;
     */
     visitKvpair(ctx: KvpairContext): string {
-        return 'TODO' // TODO
+        return 'TODO kvpair' // TODO
     }
     // ---------------------------
     // Comprehensions & Generators
@@ -1716,42 +1739,42 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : for_if_clause+;
     */
     visitFor_if_clauses(ctx: For_if_clausesContext): string {
-        return 'TODO' // TODO
+        return 'TODO for_if_clauses' // TODO
     }
     /*
     for_if_clause
     : 'async'? 'for' star_targets 'in' disjunction ('if' disjunction )*;
     */
     visitFor_if_clause(ctx: For_if_clauseContext): string {
-        return 'TODO' // TODO
+        return 'TODO for_if_clause' // TODO
     }
     /*
     listcomp
     : '[' named_expression for_if_clauses ']';
     */
     visitListcomp(ctx: ListcompContext): string {
-        return 'TODO' // TODO
+        return 'TODO listcomp' // TODO
     }
     /*
     setcomp
     : LBRACE named_expression for_if_clauses RBRACE;
     */
     visitSetcomp(ctx: SetcompContext): string {
-        return 'TODO' // TODO
+        return 'TODO setcomp' // TODO
     }
     /*
     genexp
     : '(' ( assignment_expression | expression) for_if_clauses ')';
     */
     visitGenexp(ctx: GenexpContext): string {
-        return 'TODO' // TODO
+        return 'TODO genexp' // TODO
     }
     /*
     dictcomp
     : LBRACE kvpair for_if_clauses RBRACE;
     */
     visitDictcomp(ctx: DictcompContext): string {
-        return 'TODO' // TODO
+        return 'TODO dictcomp' // TODO
     }
     // =======================
     // FUNCTION CALL ARGUMENTS
@@ -1761,7 +1784,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : args ','?;
     */
     visitArguments(ctx: ArgumentsContext): string {
-        return 'TODO' // TODO
+        return 'TODO arguments' // TODO
     }
     /*
     args
@@ -1769,7 +1792,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | kwargs;
     */
     visitArgs(ctx: ArgsContext): string {
-        return 'TODO' // TODO
+        return 'TODO args' // TODO
     }
     /*
     kwargs
@@ -1943,7 +1966,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     }
 }
 
-// Usunac break
+// Usunac break top-level
 // Obsluga bledow semantycznych
 // (Odwolanie do nieistniejacych elementów?)
 // should error when coming across non-existing variable
