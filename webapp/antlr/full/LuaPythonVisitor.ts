@@ -188,7 +188,6 @@ import {
     Del_targetContext,
     Del_t_atomContext,
     Type_expressionsContext,
-    Func_type_commentContext,
     Name_except_underscoreContext,
     NameContext,
     As_patternContext
