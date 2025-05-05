@@ -43,7 +43,7 @@ options { tokenVocab=PythonLexer; }
 program: statements? EOF;   // Symbol startowy
 // interactive: statement_newline;
 // eval: expressions NEWLINE* EOF;
-func_type: '(' type_expressions? ')' '->' expression NEWLINE* EOF;
+// func_type: '(' type_expressions? ')' '->' expression NEWLINE* EOF;
 
 // GENERAL STATEMENTS
 // ==================
@@ -862,7 +862,7 @@ del_t_atom
 // ---------------
 
 
-// type_expressions allow */** but ignore them
+// type_expressions allow * / ** but ignore them
 type_expressions
     : expression (',' expression)* (',' ('*' expression (',' '**' expression)? | '**' expression))?
     | '*' expression (',' '**' expression)?
