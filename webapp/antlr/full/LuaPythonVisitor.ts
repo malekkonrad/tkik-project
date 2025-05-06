@@ -564,7 +564,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         const rest_args = parsed_params.filter(x => !x.Args && !x.Kwargs)
         lua_func_params.push(...rest_args.map(x => x.Name))
 
-        const lua_rest_args = parsed_params.map(x => {
+        const lua_rest_args = rest_args.map(x => {
             const props = []
             if (x.Default != null) props.push(`Default = ${x.Default}`)
             props.push(`Name = "${x.Name}"`)
@@ -1507,7 +1507,8 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | primary;
     */
     visitAwait_primary(ctx: Await_primaryContext): string {
-        return 'TODO await_primary' // TODO
+        // TODO: Await?
+        return this.visit(ctx.primary())
     }
     /*
     primary
@@ -1515,7 +1516,21 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | atom;
     */
     visitPrimary(ctx: PrimaryContext): string {
-        return 'TODO primary' // TODO
+        const atom = ctx.atom()
+        if (atom != null) return this.visit(atom)
+        const primary = ctx.primary()
+        if (primary != null) {
+            const name = ctx.name()
+            if (name != null) return `${this.visit(primary)}.${this.visit(name)}`
+            const genexp = ctx.genexp()
+            if (genexp != null) return 'TODO primary genexp' // TODO
+            const slices = ctx.slices()
+            if (slices != null) return 'TODO primary slices' // TODO
+            // arguments
+            const args = ctx.arguments()
+            return `${this.visit(primary)}(${(args != null) ? this.visit(args) : '{}, {}'})`
+        }
+        throw new Error("Unexpected primary handling")
     }
     /*
     slices
@@ -1803,7 +1818,28 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : args ','?;
     */
     visitArguments(ctx: ArgumentsContext): string {
-        return this.visit(ctx.args()) // ',' is ignored by Python compiler
+        const argumentsParserHelper = new LuaPythonVisitorArgsHelper(this)
+        const cargs: Args = argumentsParserHelper.visit(ctx)
+        
+        const kwargObj = []
+        for (const [name, expr] of Object.entries(cargs.keyword_args)) kwargObj.push(`['${name}'] = ${expr}`)
+        cargs.kwargs.push(`{ ${kwargObj.join(', ')} }`)
+
+        /*
+        let orderedArgsStr = '{'
+        for (const ordered_arg of cargs.ordered_args) {
+            if (ordered_arg.starred) {
+                orderedArgsStr += `}, ${ordered_arg.expr}, {`
+            } else {
+                if (orderedArgsStr.at(-1) != '{') orderedArgsStr += ', '
+                orderedArgsStr += ordered_arg.expr
+            }
+        }
+        orderedArgsStr += '}'
+        */
+        const orderedArgsStr = `${cargs.ordered_args.reduce((acc, val) => val.starred ? (acc += `}, ${val.expr}, {`) : (acc += `${(acc.at(-1) != '{') ? ', ' : ''}${val.expr}`),'{')}}`
+        return `tableMerge(${orderedArgsStr}), objectMerge(${cargs.kwargs.join(', ')})`
+        // Should return string of two arrays (ordered_arguments, keyword_arguments)
     }
     /*
     args
@@ -1811,7 +1847,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | kwargs;
     */
     visitArgs(ctx: ArgsContext): string {
-        return 'TODO args' // TODO
+        throw new Error("args is parsed in arguments helper parser")
     }
     /*
     kwargs
@@ -1819,14 +1855,14 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | kwarg_or_double_starred (',' kwarg_or_double_starred)*;
     */
     visitKwargs(ctx: KwargsContext): string {
-        return 'TODO kwargs' // TODO
+        throw new Error("kwargs is parsed in arguments helper parser")
     }
     /*
     starred_expression
     : '*' expression;
     */
     visitStarred_expression(ctx: Starred_expressionContext): string {
-        return 'TODO starred_expression' // TODO
+        return this.visit(ctx.expression()) // Will be merged as a table without unpacking
     }
     /*
     kwarg_or_starred
@@ -1834,7 +1870,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | starred_expression;
     */
     visitKwarg_or_starred(ctx: Kwarg_or_starredContext): string {
-        return 'TODO kwarg_or_starred' // TODO
+        throw new Error("kwarg_or_starred is parsed in arguments helper parser")
     }
     /*
     kwarg_or_double_starred
@@ -1842,7 +1878,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | '**' expression;
     */
     visitKwarg_or_double_starred(ctx: Kwarg_or_double_starredContext): string {
-        return 'TODO kwarg_or_double_starred' // TODO
+        throw new Error("kwarg_or_double_starred is parsed in arguments helper parser")
     }
     // ==================
     // ASSIGNMENT TARGETS
@@ -2003,6 +2039,114 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
 //    | EOF;
 */
 
+type OrderedArg = {
+    expr: string,
+    starred?: boolean
+}
+type Args = {
+    ordered_args: OrderedArg[],
+    keyword_args: { [Name: string]: string },
+    kwargs: string[]
+}
+
+const mergeArgs = (nargs: Args, ...cargs: Args[]) => {
+    for (const carg of cargs) {
+        nargs.ordered_args.push(...carg.ordered_args)
+        for (const [name, expr] of Object.entries(carg.keyword_args)) {
+            if (nargs.keyword_args[name] != undefined) throw new Error(`SyntaxError: keyword argument repeated: ${name}`)
+            nargs.keyword_args[name] = expr
+        }
+        nargs.kwargs.push(...carg.kwargs)
+    }
+}
+export class LuaPythonVisitorArgsHelper extends ParseTreeVisitor<Args> implements PythonParserVisitor<Args> {
+    baseParser: LuaPythonVisitor
+
+    constructor(baseParser: LuaPythonVisitor) {
+        super();
+        this.baseParser = baseParser;
+    }
+
+    /*
+    arguments
+    : args ','?;
+    */
+    visitArguments(ctx: ArgumentsContext): Args {
+        return this.visit(ctx.args()) // ',' is ignored by Python compiler
+    }
+    /*
+    args
+    : (starred_expression | (assignment_expression | expression)) (',' (starred_expression | ( assignment_expression | expression)))* (',' kwargs )?
+    | kwargs;
+    */
+    visitArgs(ctx: ArgsContext): Args {
+        const cargs: Args = { ordered_args: [], keyword_args: {}, kwargs: [] }
+        //const normal_arguments = []
+        //let kwargs_arguments = null
+        for (let i = 0; i < ctx.getChildCount(); i += 2) {
+            const child = ctx.getChild(i)
+            if (child instanceof KwargsContext) {
+                mergeArgs(cargs, this.visit(child))
+            } else {
+                // TODO: See if all (starred_expression, assignment_expression, expression) are handled properly
+                cargs.ordered_args.push({
+                    expr: this.baseParser.visit(child),
+                    starred: child instanceof Starred_expressionContext
+                })
+            }
+        }
+        return cargs
+    }
+    /*
+    kwargs
+    : kwarg_or_starred (',' kwarg_or_starred)* (',' kwarg_or_double_starred (',' kwarg_or_double_starred)*)?
+    | kwarg_or_double_starred (',' kwarg_or_double_starred)*;
+    */
+    visitKwargs(ctx: KwargsContext): Args {
+        const cargs: Args = { ordered_args: [], keyword_args: {}, kwargs: [] }
+        for (let i = 0; i < ctx.getChildCount(); i += 2) {
+            // All are parsed in the same way
+            mergeArgs(cargs, this.visit(ctx.getChild(i)))
+        }
+        return cargs
+    }
+    /*
+    kwarg_or_starred
+    : name '=' expression
+    | starred_expression;
+    */
+    visitKwarg_or_starred(ctx: Kwarg_or_starredContext): Args {
+        const cargs: Args = { ordered_args: [], keyword_args: {}, kwargs: [] }
+        const name = ctx.name()
+        if (name != null) {
+            cargs.keyword_args[this.baseParser.visit(name)] = this.baseParser.visit(ctx.expression())
+        } else {
+            cargs.ordered_args.push({
+                expr: this.baseParser.visit(ctx.starred_expression()),
+                starred: true
+            })
+        }
+        return cargs
+    }
+    /*
+    kwarg_or_double_starred
+    : name '=' expression
+    | '**' expression;
+    */
+    visitKwarg_or_double_starred(ctx: Kwarg_or_double_starredContext): Args {
+        const cargs: Args = { ordered_args: [], keyword_args: {}, kwargs: [] }
+        const name = ctx.name()
+        const expr = ctx.expression()
+        if (name != null) {
+            cargs.keyword_args[this.baseParser.visit(name)] = this.baseParser.visit(expr)
+        } else {
+            cargs.kwargs.push(this.baseParser.visit(expr))
+        }
+        return cargs
+    }
+}
+
+
 type Param = {
     Kwargs?: boolean;
     Args?: boolean;
@@ -2013,9 +2157,9 @@ type Param = {
 }
 
 export class LuaPythonVisitorParamHelper extends ParseTreeVisitor<Param[]> implements PythonParserVisitor<Param[]> {
-    baseParser: ParseTreeVisitor<string>
+    baseParser: LuaPythonVisitor
 
-    constructor(baseParser: ParseTreeVisitor<string>) {
+    constructor(baseParser: LuaPythonVisitor) {
         super();
         this.baseParser = baseParser;
     }

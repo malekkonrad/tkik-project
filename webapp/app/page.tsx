@@ -61,14 +61,11 @@ export default function Home() {
       const parser = new parserClass(tokens);
       const tree = parser.program();
       
-      console.log("Tree", tree);
-      console.log(tree.toStringTree(parser.ruleNames));
       setDTree(tree.toStringTree(parser.ruleNames))
 
       if (visitorClass != null) {
         const luaVisitor = new visitorClass()
         const res = luaVisitor.visit(tree)
-        console.log("Result", res)
         setResult((res != null) ? addHeader(code, res) : '-- No result')
       } else {
         setResult("-- Can't parse this grammar")
