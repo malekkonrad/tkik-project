@@ -194,43 +194,13 @@ import {
 } from "./PythonParser";
 import PythonParserVisitor from "./PythonParserVisitor";
 import PythonLexer from "./PythonLexer";
-
-const polyfills = `
-function shortHandIf(a, b, c)
-    if a then return b end
-    return c
-end
-function tableMerge(...)
-    local target = {}
-    for _, t in ipairs(table.pack(...)) do
-        for _, v in ipairs(t) do
-            table.insert(target, v)
-        end
-    end
-    return target
-end
-function objectMerge(...)
-    local target = {}
-    for _, t in ipairs(table.pack(...)) do
-        for i, v in pairs(t) do
-            target[i] = v
-        end
-    end
-    return target
-end
-local defFunction = function (func, argsData, largs, kwargs)
-    -- argData = { Name = STRING_NAME, Default = VALUE, OnlyPositional = BOOLEAN, OnlyNamed = BOOLEAN }
-    -- argsData = { argData }
-    local argsList = {}
-    for _, v in ipairs(argsData) do table.insert(argsList, v.Name) end
-    -- Calling the function
-    return function (orderedArgs, kwArgs)
-        local finalPositionalArgs = {}
-    end
-end
-`
+import polyfills from "./LuaPolyfills";
 
 export default class LuaPythonVisitor extends ParseTreeVisitor<string> implements PythonParserVisitor<string> {
+    constructor() {
+        super()
+        // TODO: Need to set up the stacks
+    }
     // ==============
     // STARTING RULES
     // ==============
@@ -240,7 +210,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     */
     visitProgram(ctx: ProgramContext): string {
         const statements = ctx.statements()
-        if (statements != null) return polyfills + this.visit(statements); // TODO: Only add polyfills when necessary
+        if (statements != null) return polyfills + "\n-- Program content\n" + this.visit(statements); // TODO: Only add polyfills when necessary
         return ''
     }
     // ==================
@@ -323,10 +293,6 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     */
     visitAssignment(ctx: AssignmentContext): string {
         const augassign = ctx.augassign()
-        // TODO:
-        // name ':' expression ('=' annotated_rhs )?
-        // ('(' single_target ')' | single_subscript_attribute_target) ':' expression ('=' annotated_rhs )?
-        // (star_targets '=' )+ (yield_expr | star_expressions) TYPE_COMMENT?
         if (augassign != null) { // single_target augassign (yield_expr | star_expressions)
             /* eg.
                 x += 1
@@ -375,7 +341,8 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     annotated_rhs: yield_expr | star_expressions;
     */
     visitAnnotated_rhs(ctx: Annotated_rhsContext): string {
-        return 'TODO annotated_rhs' // TODO
+        const star_exprs = ctx.star_expressions()
+        if (star_exprs != null) return this.visit(star_exprs)
     }
     /*
     augassign
@@ -1227,7 +1194,12 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | lambdef;
     */
     visitExpression(ctx: ExpressionContext): string {
-        return 'TODO expression' // TODO
+        const lambdef = ctx.lambdef()
+        if (lambdef != null) return this.visit(lambdef)
+        
+        const expr = ctx.expression()
+        if (expr != null) return `shortHandIf(${this.visit(ctx.getChild(2))}, ${this.visit(ctx.getChild(0))}, ${this.visit(expr)})`
+        return this.visit(ctx.getChild(0))
     }
     /*
     yield_expr
@@ -1293,7 +1265,6 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : conjunction ('or' conjunction )*;
     */
     visitDisjunction(ctx: DisjunctionContext): string {
-        // TODO: Confirm precedence in lua
         return ctx.conjunction_list().map(x => this.visit(x)).join(' or ')
     }
     /*
@@ -1731,28 +1702,62 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | FSTRING_MIDDLE;
     */
     visitFstring_middle(ctx: Fstring_middleContext): string {
-        return 'TODO fstring_middle' // TODO
+        const t = ctx.getChild(0)
+        if (t instanceof TerminalNode) {
+            let innerText = t.getText()
+            innerText = innerText.replaceAll(/(?<!\\)'/g, "'") // TODO: Need to fix this as well
+            return `'${innerText}'`
+        }
+        return this.visit(ctx.fstring_replacement_field())
     }
     /*
     fstring_replacement_field
     : LBRACE annotated_rhs '='? fstring_conversion? fstring_full_format_spec? RBRACE;
     */
     visitFstring_replacement_field(ctx: Fstring_replacement_fieldContext): string {
-        return 'TODO fstring_replacement_field' // TODO
+        // TODO: implement str (`s`), repr (`r`), ascii (`a`), format
+        const format_spec = ctx.fstring_full_format_spec()
+        const fstring_conv = ctx.fstring_conversion()
+        const equal_sign = ctx.EQUAL()
+        const annotated_rhs = ctx.annotated_rhs()
+
+        const results = []
+        if (equal_sign != null) { // It actually just prepends the value with anything before the conversion
+            let innerText = annotated_rhs.getText()
+            innerText = innerText.replaceAll(/(?<!\\)'/g, "'") // TODO: Need to fix this as well
+            results.push(`'${innerText} ='`)
+        }
+
+        let expr = this.visit(annotated_rhs)
+        if (fstring_conv != null) expr = `${this.visit(fstring_conv)}(${expr})`
+        if (format_spec != null) expr = `format(${expr}, ${this.visit(format_spec)})`
+
+        results.push(`tostring(${expr})`)
+        return results.join(' .. ')
     }
     /*
     fstring_conversion
     : '!' name;
     */
     visitFstring_conversion(ctx: Fstring_conversionContext): string {
-        return 'TODO fstring_conversion' // TODO
+        switch (this.visit(ctx.name())) {
+            case 's':
+                return 'str'
+            case 'r':
+                return 'repr'
+            case 'a':
+                return 'ascii'
+        }
+        throw new Error("Unknown fstring conversion")
     }
     /*
     fstring_full_format_spec
     : ':' fstring_format_spec*;
     */
     visitFstring_full_format_spec(ctx: Fstring_full_format_specContext): string {
-        return 'TODO fstring_full_format_spec' // TODO
+        const fstring_format_spec_list_parsed = ctx.fstring_format_spec_list().map(x => this.visit(x))
+        fstring_format_spec_list_parsed.unshift("''") // append so any string is produced
+        return fstring_format_spec_list_parsed.join(' .. ')
     }
     /*
     fstring_format_spec
@@ -1760,26 +1765,64 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | fstring_replacement_field;
     */
     visitFstring_format_spec(ctx: Fstring_format_specContext): string {
-        return 'TODO fstring_format_spec' // TODO
+        const t = ctx.getChild(0)
+        if (t instanceof TerminalNode) {
+            let innerText = t.getText()
+            innerText = innerText.replaceAll(/(?<!\\)'/g, "'") // TODO: Need to fix this as well
+            return `'${innerText}'`
+        }
+        return this.visit(ctx.fstring_replacement_field())
     }
     /*
     fstring
     : FSTRING_START fstring_middle* FSTRING_END;
     */
     visitFstring(ctx: FstringContext): string {
-        return 'TODO fstring' // TODO
+        const prefixesRes = /^\w+/.exec(ctx.FSTRING_START().getText())
+        const prefixes = (prefixesRes != null) ? prefixesRes[0].split('') : []
+        // TODO: Handle r prefix (should that just be propagated to the actual strings?)
+
+        const fstring_middle_list_parsed = ctx.fstring_middle_list().map(x => this.visit(x))
+        fstring_middle_list_parsed.unshift("''") // append so any string is produced
+        return fstring_middle_list_parsed.join(' .. ')
     }
     /*
     string: STRING;
     */
     visitString(ctx: StringContext): string {
-        return 'TODO string' // TODO
+        let stringText = ctx.STRING().getText()
+        const prefixesRes = /^\w+/.exec(stringText)
+        if (prefixesRes != null) stringText = stringText.substring(prefixesRes[0].length) // Remove the flags
+        
+        const prefixes = (prefixesRes != null) ? prefixesRes[0].split('') : []
+        if (prefixes.indexOf('r') != -1) {
+            // Parse \u
+            // TODO: The following wont fully work as we need to count the number of `\` (need to change it to a loop or so?)
+            stringText = stringText.replaceAll(/(?<!\\)\\u([0-9a-fA-F]{4})/g, (_, v) => String.fromCharCode(parseInt(v, 16)))
+            stringText = stringText.replaceAll(/(?<!\\)\\U([0-9a-fA-F]{8})/g, (_, v) => String.fromCharCode(parseInt(v, 16)))
+            stringText = stringText.replaceAll(/(?<!\\)\\x([0-9a-fA-F]{2})/g, (_, v) => String.fromCharCode(parseInt(v, 16)))
+            stringText = stringText.replaceAll(/(?<!\\)\\([0-8]{1,3})/g, (_, v) => String.fromCharCode(parseInt(v, 8)))
+            // \n{name} is unsupported // https://docs.python.org/3/reference/lexical_analysis.html
+        } else {
+            stringText = stringText.replaceAll(/\\(?!['"])/g, '\\\\') // Parse the '\' to '\\' so that it's escaped (apparently without `'` and `"`")
+        }
+        if (stringText.startsWith("'''") || stringText.startsWith('"""')) {
+            // Goal here is to change `'''` to ' and then escape any not already escaped  `'`
+            // TODO: Also need to make sure to count the number of `\`
+            let innerText = stringText.substring(3, stringText.length - 3)
+            innerText = innerText.replaceAll(/(?<!\\)'/g, "'")
+            stringText = `'${innerText}'`
+        }
+        // TODO: Should be a byte type instead of a string if there is a `b` prefix
+        return stringText
     }
     /*
     strings: (fstring|string)+;
     */
     visitStrings(ctx: StringsContext): string {
-        return 'TODO strings' // TODO
+        const parsedChildren = []
+        for (let i = 0; i < ctx.getChildCount(); ++i) parsedChildren.push(this.visit(ctx.getChild(i)))
+        return parsedChildren.join(' .. ')
     }
     /*
     list
@@ -2058,7 +2101,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | '*' expression (',' '**' expression)?
     | '**' expression;
     */
-    visitType_expressions(ctx: Type_expressionsContext): string {
+    visitType_expressions(ctx: Type_expressionsContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         /* eg.
             Callable[[int, str], bool]   (`int, str`)
             Callable[[int, *str], bool]   (`int, *str`)
