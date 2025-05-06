@@ -195,6 +195,41 @@ import {
 import PythonParserVisitor from "./PythonParserVisitor";
 import PythonLexer from "./PythonLexer";
 
+const polyfills = `
+function shortHandIf(a, b, c)
+    if a then return b end
+    return c
+end
+function tableMerge(...)
+    local target = {}
+    for _, t in ipairs(table.pack(...)) do
+        for _, v in ipairs(t) do
+            table.insert(target, v)
+        end
+    end
+    return target
+end
+function objectMerge(...)
+    local target = {}
+    for _, t in ipairs(table.pack(...)) do
+        for i, v in pairs(t) do
+            target[i] = v
+        end
+    end
+    return target
+end
+local defFunction = function (func, argsData, largs, kwargs)
+    -- argData = { Name = STRING_NAME, Default = VALUE, OnlyPositional = BOOLEAN, OnlyNamed = BOOLEAN }
+    -- argsData = { argData }
+    local argsList = {}
+    for _, v in ipairs(argsData) do table.insert(argsList, v.Name) end
+    -- Calling the function
+    return function (orderedArgs, kwArgs)
+        local finalPositionalArgs = {}
+    end
+end
+`
+
 export default class LuaPythonVisitor extends ParseTreeVisitor<string> implements PythonParserVisitor<string> {
     // ==============
     // STARTING RULES
@@ -205,7 +240,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     */
     visitProgram(ctx: ProgramContext): string {
         const statements = ctx.statements()
-        if (statements != null) return this.visit(statements);
+        if (statements != null) return polyfills + this.visit(statements); // TODO: Only add polyfills when necessary
         return ''
     }
     // ==================
@@ -293,12 +328,48 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         // ('(' single_target ')' | single_subscript_attribute_target) ':' expression ('=' annotated_rhs )?
         // (star_targets '=' )+ (yield_expr | star_expressions) TYPE_COMMENT?
         if (augassign != null) { // single_target augassign (yield_expr | star_expressions)
-            // TODO: Add yield_expr / star_expressions
-            // augassign needs to be mapped to normal operator
+            /* eg.
+                x += 1
+                a *= b + c
+                total -= (yield)
+            */
             const sin_target = ctx.single_target()
-            return `${this.visit(sin_target)} = ${this.visit(sin_target)} ${this.visit(augassign)} `
+            const star_exprs = ctx.star_expressions()
+            const target = this.visit(sin_target)
+            const yield_expr = ctx.yield_expr()
+
+            // augassign needs to be mapped to normal operator
+            const augassign_op = ctx.augassign().getChild(0) as TerminalNode
+            switch (augassign_op.symbol.type) {
+                case PythonLexer.PLUSEQUAL:
+                    return `${target} = ${target} + ${this.visit(star_exprs)}`
+                case PythonLexer.MINEQUAL:
+                    return `${target} = ${target} - ${this.visit(star_exprs)}`
+                case PythonLexer.STAREQUAL:
+                    return `${target} = ${target} * ${this.visit(star_exprs)}`
+                case PythonLexer.SLASHEQUAL:
+                    return `${target} = ${target} / ${this.visit(star_exprs)}`
+                case PythonLexer.PERCENTEQUAL:
+                    return `${target} = ${target} % ${this.visit(star_exprs)}`
+                case PythonLexer.AMPEREQUAL:
+                    return `${target} = bit.band(${target}, ${this.visit(star_exprs)})`
+                case PythonLexer.VBAREQUAL:
+                    return `${target} = bit.bor(${target}, ${this.visit(star_exprs)})`
+                case PythonLexer.CIRCUMFLEXEQUAL:
+                    return `${target} = bit.bxor(${target}, ${this.visit(star_exprs)})`
+                case PythonLexer.LEFTSHIFTEQUAL:
+                    return `${target} = bit.lshift(${target}, ${this.visit(star_exprs)})`
+                case PythonLexer.RIGHTSHIFTEQUAL:
+                    return `${target} = bit.rshift(${target}, ${this.visit(star_exprs)})`
+                case PythonLexer.DOUBLESTAREQUAL:
+                    return `${target} = math.pow(${target}, ${this.visit(star_exprs)})`
+                case PythonLexer.DOUBLESLASHEQUAL:
+                    return `${target} = math.floor(${target} / ${this.visit(star_exprs)})`
+                default:
+                    throw Error("Unknown augassign token")
+            }
         }
-        throw Error("TODO: Unimplemented")
+        throw Error("Unexpected assignment handling")
     }
     /*
     annotated_rhs: yield_expr | star_expressions;
@@ -322,39 +393,8 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | '**='
     | '//=';
     */
-    visitAugassign(ctx: AugassignContext): string {
-        // This returns normal operator since lua does not support operator with assignment
-        const s = ctx.getChild(0) as TerminalNode
-        switch (s.symbol.type) {
-            case PythonLexer.PLUSEQUAL:
-                return '+'
-            case PythonLexer.MINEQUAL:
-                return '-'
-            case PythonLexer.STAREQUAL:
-                return '*'
-            case PythonLexer.SLASHEQUAL:
-                return '/'
-            case PythonLexer.PERCENTEQUAL:
-                return '%'
-            case PythonLexer.AMPEREQUAL:
-                // TODO: We should modify the grammar to support this
-                // eg augassign : {TOKEN} (yield_expr | star_expressions);
-                throw Error('TODO: Not implemented yet augassign &')
-            case PythonLexer.VBAREQUAL:
-                throw Error('TODO: Not implemented yet augassign |')
-            case PythonLexer.CIRCUMFLEXEQUAL:
-                throw Error('TODO: Not implemented yet augassign ^')
-            case PythonLexer.LEFTSHIFTEQUAL:
-                throw Error('TODO: Not implemented yet augassign <<')
-            case PythonLexer.RIGHTSHIFTEQUAL:
-                throw Error('TODO: Not implemented yet augassign >> ')
-            case PythonLexer.DOUBLESTAREQUAL:
-                throw Error('TODO: Not implemented yet augassign **')
-            case PythonLexer.DOUBLESLASHEQUAL:
-                throw Error('TODO: Not implemented yet augassign //')
-            default:
-                throw Error("Unknown augassign token")
-        }
+    visitAugassign(ctx: AugassignContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("Augassign is parsed within assignment")
     }
     /*
     return_stmt : 'return' star_expressions?;
@@ -1611,7 +1651,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     lambda_params
     : lambda_parameters;
     */
-    visitLambda_params(ctx: Lambda_paramsContext): string {
+    visitLambda_params(ctx: Lambda_paramsContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("lambda_params is parsed in param helper parser")
     }
     /*
@@ -1622,21 +1662,21 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | lambda_param_with_default+ lambda_star_etc?
     | lambda_star_etc;
     */
-    visitLambda_parameters(ctx: Lambda_parametersContext): string {
+    visitLambda_parameters(ctx: Lambda_parametersContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("lambda_parameters is parsed in param helper parser")
     }
     /*
     lambda_slash_no_default
     : lambda_param_no_default+ '/' ','?;
     */
-    visitLambda_slash_no_default(ctx: Lambda_slash_no_defaultContext): string {
+    visitLambda_slash_no_default(ctx: Lambda_slash_no_defaultContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("lambda_slash_no_default is parsed in param helper parser")
     }
     /*
     lambda_slash_with_default
     : lambda_param_no_default* lambda_param_with_default+ '/' ','?;
     */
-    visitLambda_slash_with_default(ctx: Lambda_slash_with_defaultContext): string {
+    visitLambda_slash_with_default(ctx: Lambda_slash_with_defaultContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("lambda_slash_with_default is parsed in param helper parser")
     }
     /*
@@ -1645,35 +1685,35 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | '*' ',' lambda_param_maybe_default+ lambda_kwds?
     | lambda_kwds;
     */
-    visitLambda_star_etc(ctx: Lambda_star_etcContext): string {
+    visitLambda_star_etc(ctx: Lambda_star_etcContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("lambda_star_etc is parsed in param helper parser")
     }
     /*
     lambda_kwds
     : '**' lambda_param_no_default;
     */
-    visitLambda_kwds(ctx: Lambda_kwdsContext): string {
+    visitLambda_kwds(ctx: Lambda_kwdsContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("lambda_kwds is parsed in param helper parser")
     }
     /*
     lambda_param_no_default
     : lambda_param ','?;
     */
-    visitLambda_param_no_default(ctx: Lambda_param_no_defaultContext): string {
+    visitLambda_param_no_default(ctx: Lambda_param_no_defaultContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("lambda_param_no_default is parsed in param helper parser")   
     }
     /*
     lambda_param_with_default
     : lambda_param default_assignment ','?;
     */
-    visitLambda_param_with_default(ctx: Lambda_param_with_defaultContext): string {
+    visitLambda_param_with_default(ctx: Lambda_param_with_defaultContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("lambda_param_with_default is parsed in param helper parser")   
     }
     /*
     lambda_param_maybe_default
     : lambda_param default_assignment? ','?;
     */
-    visitLambda_param_maybe_default(ctx: Lambda_param_maybe_defaultContext): string {
+    visitLambda_param_maybe_default(ctx: Lambda_param_maybe_defaultContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("lambda_param_maybe_default is parsed in param helper parser")
     }
     /*
@@ -1872,7 +1912,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : (starred_expression | (assignment_expression | expression)) (',' (starred_expression | ( assignment_expression | expression)))* (',' kwargs )?
     | kwargs;
     */
-    visitArgs(ctx: ArgsContext): string {
+    visitArgs(ctx: ArgsContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("args is parsed in arguments helper parser")
     }
     /*
@@ -1880,7 +1920,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : kwarg_or_starred (',' kwarg_or_starred)* (',' kwarg_or_double_starred (',' kwarg_or_double_starred)*)?
     | kwarg_or_double_starred (',' kwarg_or_double_starred)*;
     */
-    visitKwargs(ctx: KwargsContext): string {
+    visitKwargs(ctx: KwargsContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("kwargs is parsed in arguments helper parser")
     }
     /*
@@ -1895,7 +1935,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : name '=' expression
     | starred_expression;
     */
-    visitKwarg_or_starred(ctx: Kwarg_or_starredContext): string {
+    visitKwarg_or_starred(ctx: Kwarg_or_starredContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("kwarg_or_starred is parsed in arguments helper parser")
     }
     /*
@@ -1903,7 +1943,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : name '=' expression
     | '**' expression;
     */
-    visitKwarg_or_double_starred(ctx: Kwarg_or_double_starredContext): string {
+    visitKwarg_or_double_starred(ctx: Kwarg_or_double_starredContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("kwarg_or_double_starred is parsed in arguments helper parser")
     }
     // ==================
@@ -2025,7 +2065,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             Callable[[int, str, **Any], bool]   (`int, str, **Any`)
             etc.
         */
-        return 'TODO type_expressions' // TODO
+        throw new Error("type_expressions are not implemented")
     }
     /*
     name_except_underscore
