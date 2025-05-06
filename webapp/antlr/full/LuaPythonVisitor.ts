@@ -553,13 +553,35 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         | 'async' 'def' name type_params? '(' params? ')' ('->' expression )? ':' func_type_comment? block;
     */
     visitFunction_def_raw(ctx: Function_def_rawContext): string {
-        let result = `function ${ctx.name().getText()}(`
+        const params = ctx.params()
+        const parsed_params: Param[] = (params != null) ? (new LuaPythonVisitorParamHelper(this)).visit(params) : []
+        const kwargs_name = parsed_params.filter(x => x.Kwargs == true).map(x => x.Name)[0]
+        const args_name = parsed_params.filter(x => x.Args == true).map(x => x.Name)[0]
+
+        const lua_func_params = []
+        if (kwargs_name != null) lua_func_params.push(kwargs_name) // push kwargs as first
+        if (args_name != null) lua_func_params.push(args_name) // push args as second
+        const rest_args = parsed_params.filter(x => !x.Args && !x.Kwargs)
+        lua_func_params.push(...rest_args.map(x => x.Name))
+
+        const lua_rest_args = parsed_params.map(x => {
+            const props = []
+            if (x.Default != null) props.push(`Default = ${x.Default}`)
+            props.push(`Name = "${x.Name}"`)
+            if (x.OnlyPositional) props.push('OnlyPositional = true')
+            if (x.OnlyNamed) props.push('OnlyNamed = true')
+            return `{ ${props.join(', ')} }`
+        })
+
         // TODO: async
-        result += this.visit(ctx.params())
-        result += ')\n'
-        // TODO: expression & func_type_comment?
+        let result = `local ${this.visit(ctx.name())} = defFunction(\n`
+        result += `function (${lua_func_params.join(', ')})\n`
         result += this.visit(ctx.block())
-        result += '\nend'
+        result += `\nend, { ${lua_rest_args.join(', ')} }, ` // argsData
+        result += `${(args_name != null) ? 'true' : 'false'}, `
+        result += `${(kwargs_name != null) ? 'true' : 'false'}, `
+        result += '\n)'
+        // TODO: expression?
         return result
     }
     // -------------------
@@ -570,7 +592,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : parameters;
     */
     visitParams(ctx: ParamsContext): string {
-        return this.visit(ctx.parameters())
+        throw new Error("params is parsed in param helper parser")
     }
     /*
     parameters
@@ -581,21 +603,21 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | star_etc;
     */
     visitParameters(ctx: ParametersContext): string {
-        return 'TODO parameters' // TODO
+        throw new Error("parameters is parsed in param helper parser")
     }
     /*
     slash_no_default
         : param_no_default+ '/' ','?;
     */
     visitSlash_no_default(ctx: Slash_no_defaultContext): string {
-        return 'TODO slash_no_default' // TODO
+        throw new Error("slash_no_default is parsed in param helper parser")
     }
     /*
     slash_with_default
     : param_no_default* param_with_default+ '/' ','?;
     */
     visitSlash_with_default(ctx: Slash_with_defaultContext): string {
-        return 'TODO slash_with_default' // TODO
+        throw new Error("slash_with_default is parsed in param helper parser")
     }
     /*
     star_etc
@@ -605,72 +627,72 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | kwds;
     */
     visitStar_etc(ctx: Star_etcContext): string {
-        return 'TODO star_etc' // TODO
+        throw new Error("star_etc is parsed in param helper parser")
     }
     /*
     kwds
     : '**' param_no_default;
     */
     visitKwds(ctx: KwdsContext): string {
-        return 'TODO kwds' // TODO
+        throw new Error("kwds is parsed in param helper parser")
     }
     /*
     param_no_default
     : param ','?;
     */
     visitParam_no_default(ctx: Param_no_defaultContext): string {
-        return 'TODO param_no_default' // TODO
+        throw new Error("param_no_default is parsed in param helper parser")
     }
     /*
     param_no_default_star_annotation
     : param_star_annotation ','?;
     */
     visitParam_no_default_star_annotation(ctx: Param_no_default_star_annotationContext): string {
-        return 'TODO param_no_default_star_annotation' // TODO
+        throw new Error("param_no_default_star_annotation is parsed in param helper parser")
     }
     /*
     param_with_default
     : param default_assignment ','?;
     */
     visitParam_with_default(ctx: Param_with_defaultContext): string {
-        return 'TODO param_with_default' // TODO
+        throw new Error("param_with_default is parsed in param helper parser")
     }
     /*
     param_maybe_default
     : param default_assignment? ','?;
     */
     visitParam_maybe_default(ctx: Param_maybe_defaultContext): string {
-        return 'TODO param_maybe_default' // TODO
+        throw new Error("param_maybe_default is parsed in param helper parser")
     }
     /*
     param: name annotation?;
     */
     visitParam(ctx: ParamContext): string {
-        return 'TODO param' // TODO
+        return this.visit(ctx.name()) // Just return the parameter name (skip the annotation as it's not useful)
     }
     /*
     param_star_annotation: name star_annotation;
     */
     visitParam_star_annotation(ctx: Param_star_annotationContext): string {
-        return 'TODO param_star_annotation' // TODO   
+        return this.visit(ctx.name()) // Just return the parameter name (skip the annotation as it's not useful)
     }
     /*
     annotation: ':' expression;
     */
     visitAnnotation(ctx: AnnotationContext): string {
-        return 'TODO annotation' // TODO
+        throw new Error("Annotations are not supported and shouldn't be attempted to be parsed.")
     }
     /*
     star_annotation: ':' star_expression;
     */
     visitStar_annotation(ctx: Star_annotationContext): string {
-        return 'TODO star_annotation' // TODO
+        throw new Error("Star annotations are not supported and shouldn't be attempted to be parsed.")
     }
     /*
     default_assignment: '=' expression;
     */
     visitDefault_assignment(ctx: Default_assignmentContext): string {
-        return 'TODO default_assignment' // TODO
+        return this.visit(ctx.expression()) // Return the string expression (used in param parser)
     }
     // ------------
     // If statement
@@ -1981,3 +2003,171 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
 //    | NEWLINE
 //    | EOF;
 */
+
+type Param = {
+    Kwargs?: boolean;
+    Args?: boolean;
+    Default?: string;
+    Name: string;
+    OnlyPositional?: boolean;
+    OnlyNamed?: boolean;
+}
+
+export class LuaPythonVisitorParamHelper extends ParseTreeVisitor<Param[]> implements PythonParserVisitor<Param[]> {
+    baseParser: ParseTreeVisitor<string>
+
+    constructor(baseParser: ParseTreeVisitor<string>) {
+        super();
+        this.baseParser = baseParser;
+    }
+    // -------------------
+    // Function parameters
+    // -------------------
+    /*
+    params
+    : parameters;
+    */
+    visitParams(ctx: ParamsContext): Param[] {
+        return this.visit(ctx.parameters())
+    }
+    /*
+    parameters
+    : slash_no_default param_no_default* param_with_default* star_etc?
+    | slash_with_default param_with_default* star_etc?
+    | param_no_default+ param_with_default* star_etc?
+    | param_with_default+ star_etc?
+    | star_etc;
+    */
+    visitParameters(ctx: ParametersContext): Param[] {
+        /* Note:
+        All arguments before slash ('/') are positional only
+        All arguments after star ('*') are named only
+        */
+        // Parse all the parameters and join the strings using `,`
+        const params = []
+        for (let i = 0; i < ctx.getChildCount(); ++i) {
+            const child = ctx.getChild(i)
+            params.push(...this.visit(child))
+        }
+        return params
+    }
+    /*
+    slash_no_default
+    : param_no_default+ '/' ','?;
+    */
+    visitSlash_no_default(ctx: Slash_no_defaultContext): Param[] {
+        const param_no_default_list = ctx.param_no_default_list()
+        const params = []
+        for (const param of param_no_default_list) params.push(...this.visit(param)) // 1 is expected
+        
+        for (const param of params) { // Mark all as only positional
+            param.OnlyPositional = true
+        }
+        return params
+    }
+    /*
+    slash_with_default
+    : param_no_default* param_with_default+ '/' ','?;
+    */
+    visitSlash_with_default(ctx: Slash_with_defaultContext): Param[] {
+        const param_no_default_list = ctx.param_no_default_list()
+        const param_with_default_list = ctx.param_with_default_list()
+        const param_final_list = param_no_default_list.concat(param_with_default_list)
+        const params = []
+        for (const param of param_final_list) params.push(...this.visit(param)) // 1 is expected
+        
+        for (const param of params) { // Mark all as only positional
+            param.OnlyPositional = true
+        }
+        return params
+    }
+    /*
+    star_etc
+    : '*' param_no_default param_maybe_default* kwds?
+    | '*' param_no_default_star_annotation param_maybe_default* kwds?
+    | '*' ',' param_maybe_default+ kwds?
+    | kwds;
+    */
+    visitStar_etc(ctx: Star_etcContext): Param[] {
+        const first = ctx.getChild(0)
+        const kwds = ctx.kwds()
+        if (first instanceof TerminalNode) {
+            const second = ctx.getChild(0)
+            if (second instanceof TerminalNode) {
+                // '*' ',' param_maybe_default+ kwds?
+                const params = []
+                const param_maybe_default = ctx.param_maybe_default_list().map(x => this.visit(x))
+                for (const param of param_maybe_default) params.push(...param) // 1 is expected
+                if (kwds != null) params.push(...this.visit(kwds)) // 1 is expected
+                
+                for (const param of params) { // Mark each param as named only
+                    param.OnlyNamed = true
+                }
+
+                return params
+            } else {
+                // '*' param_no_default param_maybe_default* kwds?
+                // '*' param_no_default_star_annotation param_maybe_default* kwds?
+                const params = []
+                const param_no_default = ctx.param_no_default()
+                if (param_no_default != null) params.push(...this.visit(param_no_default)) // 1 is expected
+                const param_no_default_star_annotation = ctx.param_no_default_star_annotation()
+                if (param_no_default_star_annotation != null) params.push(...this.visit(param_no_default_star_annotation)) // 1 is expected
+                const param_maybe_default_list = ctx.param_maybe_default_list().map(x => this.visit(x))
+                for (const param of param_maybe_default_list) params.push(...param) // 1 is expected
+                if (kwds != null) params.push(...this.visit(kwds)) // 1 is expected
+
+                params[0].Args = true // Apply args to first argument which has to exist (param_no_default or param_no_default_star_annotation)
+                return params
+            }
+        }
+        // kwds
+        return this.visit(kwds)
+    }
+    /*
+    kwds
+    : '**' param_no_default;
+    */
+    visitKwds(ctx: KwdsContext): Param[] {
+        const params = this.visit(ctx.param_no_default())
+        params[0].Kwargs = true
+        return params
+    }
+    /*
+    param_no_default
+    : param ','?;
+    */
+    visitParam_no_default(ctx: Param_no_defaultContext): Param[] {
+        const param: Param = { Name: this.baseParser.visit(ctx.param()) }
+        return [param]
+    }
+    /*
+    param_no_default_star_annotation
+    : param_star_annotation ','?;
+    */
+    visitParam_no_default_star_annotation(ctx: Param_no_default_star_annotationContext): Param[] {
+        const param: Param = { Name: this.baseParser.visit(ctx.param_star_annotation()) } // Args will be adjusted within star_etc
+        return [param]
+    }
+    /*
+    param_with_default
+    : param default_assignment ','?;
+    */
+    visitParam_with_default(ctx: Param_with_defaultContext): Param[] {
+        const param: Param = {
+            Name: this.baseParser.visit(ctx.param()),
+            Default: this.baseParser.visit(ctx.default_assignment())
+        }
+        return [param]
+    }
+    /*
+    param_maybe_default
+    : param default_assignment? ','?;
+    */
+    visitParam_maybe_default(ctx: Param_maybe_defaultContext): Param[] {
+        const param: Param = { Name: this.baseParser.visit(ctx.param()) }
+        const default_assignment = ctx.default_assignment()
+        if (default_assignment != null) param.Default = this.baseParser.visit(default_assignment)
+        return [param]
+    }
+}
