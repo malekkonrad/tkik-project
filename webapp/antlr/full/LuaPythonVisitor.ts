@@ -579,8 +579,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         result += this.visit(ctx.block())
         result += `\nend, { ${lua_rest_args.join(', ')} }, ` // argsData
         result += `${(args_name != null) ? 'true' : 'false'}, `
-        result += `${(kwargs_name != null) ? 'true' : 'false'}, `
-        result += '\n)'
+        result += `${(kwargs_name != null) ? 'true' : 'false'})`
         // TODO: expression?
         return result
     }
@@ -2092,7 +2091,7 @@ export class LuaPythonVisitorParamHelper extends ParseTreeVisitor<Param[]> imple
         const first = ctx.getChild(0)
         const kwds = ctx.kwds()
         if (first instanceof TerminalNode) {
-            const second = ctx.getChild(0)
+            const second = ctx.getChild(1)
             if (second instanceof TerminalNode) {
                 // '*' ',' param_maybe_default+ kwds?
                 const params = []
@@ -2116,8 +2115,12 @@ export class LuaPythonVisitorParamHelper extends ParseTreeVisitor<Param[]> imple
                 const param_maybe_default_list = ctx.param_maybe_default_list().map(x => this.visit(x))
                 for (const param of param_maybe_default_list) params.push(...param) // 1 is expected
                 if (kwds != null) params.push(...this.visit(kwds)) // 1 is expected
-
+                
                 params[0].Args = true // Apply args to first argument which has to exist (param_no_default or param_no_default_star_annotation)
+                for (const param of params) { // Mark each param as named only
+                    if (!param.Args) param.OnlyNamed = true
+                }
+
                 return params
             }
         }
