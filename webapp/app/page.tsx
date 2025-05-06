@@ -18,6 +18,8 @@ import OursPythonLexer from '../antlr/ours/MiniPythonLexer';
 import OursPythonParser from '../antlr/ours/MiniPythonParser';
 import LuaPythonVisitor from '../antlr/full/LuaPythonVisitor';
 
+import samples from './samples'
+
 const lexers = {
   'full': FullPythonLexer,
   'ours': OursPythonLexer
@@ -50,6 +52,14 @@ export default function Home() {
   const [version, setVersion] = React.useState('full')
   const [result, setResult] = React.useState('')
   const [dTree, setDTree] = React.useState('')
+  const [sampleName, setSampleName] = React.useState('')
+  React.useEffect(() => {
+    if (sampleName != '') {
+      const sample = samples.find(x => x.name == sampleName)
+      if (sample != null) setCode(sample.src)
+    }
+  }, [ sampleName ])
+
   React.useEffect(() => {
     try {
       const chars = new CharStream(code); // replace this with a FileStream as required
@@ -105,6 +115,17 @@ export default function Home() {
       >
         <MenuItem value='full'>Full Python</MenuItem>
         <MenuItem value='ours'>Our Version</MenuItem>
+      </Select><br />
+      <Select
+        value={sampleName}
+        onChange={(event: SelectChangeEvent) => {
+          setSampleName(event.target.value)
+        }}
+      >
+        <MenuItem value=''>No sample</MenuItem>
+        {
+          samples.map(x => (<MenuItem value={x.name} key={x.name}>{x.name}</MenuItem>))
+        }
       </Select><br />
       <TextField variant='outlined' multiline value={code} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCode(e.target.value)} />
       <SyntaxHighlighter language="lua" style={dark}>

@@ -196,6 +196,8 @@ import PythonParserVisitor from "./PythonParserVisitor";
 import PythonLexer from "./PythonLexer";
 import polyfills from "./LuaPolyfills";
 
+const indent = (txt: string, chars: string = '  ') => txt.split('\n').map(x => chars + x).join('\n')
+
 export default class LuaPythonVisitor extends ParseTreeVisitor<string> implements PythonParserVisitor<string> {
     constructor() {
         super()
@@ -262,7 +264,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
                 case PythonLexer.BREAK:
                     return 'break';
                 case PythonLexer.CONTINUE:
-                    throw Error("TODO: Consider continue support")
+                    throw new Error("TODO: Consider continue support (goto label)") // TODO
             }
         }
         return this.visit(ch)
@@ -332,10 +334,10 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
                 case PythonLexer.DOUBLESLASHEQUAL:
                     return `${target} = math.floor(${target} / ${this.visit(star_exprs)})`
                 default:
-                    throw Error("Unknown augassign token")
+                    throw new Error("Unknown augassign token")
             }
         }
-        throw Error("Unexpected assignment handling")
+        throw new Error("Unexpected assignment handling")
     }
     /*
     annotated_rhs: yield_expr | star_expressions;
@@ -503,9 +505,9 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         const stmts = ctx.statements()
         const simple_stmts = ctx.simple_stmts()
         if (stmts != null) {
-            result += this.visit(stmts)
+            result += indent(this.visit(stmts))
         } else if (simple_stmts != null) {
-            result += this.visit(simple_stmts)
+            result += indent(this.visit(simple_stmts))
         }
         result += '\nend'
         return result
@@ -581,7 +583,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         })
 
         // TODO: async
-        let result = `local ${this.visit(ctx.name())} = defFunction(\n`
+        let result = `local ${this.visit(ctx.name())} = defFunction(`
         result += `function (${lua_func_params.join(', ')})\n`
         result += this.visit(ctx.block())
         result += `\nend, { ${lua_rest_args.join(', ')} }, ` // argsData
@@ -597,7 +599,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     params
     : parameters;
     */
-    visitParams(ctx: ParamsContext): string {
+    visitParams(ctx: ParamsContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("params is parsed in param helper parser")
     }
     /*
@@ -608,21 +610,21 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | param_with_default+ star_etc?
     | star_etc;
     */
-    visitParameters(ctx: ParametersContext): string {
+    visitParameters(ctx: ParametersContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("parameters is parsed in param helper parser")
     }
     /*
     slash_no_default
         : param_no_default+ '/' ','?;
     */
-    visitSlash_no_default(ctx: Slash_no_defaultContext): string {
+    visitSlash_no_default(ctx: Slash_no_defaultContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("slash_no_default is parsed in param helper parser")
     }
     /*
     slash_with_default
     : param_no_default* param_with_default+ '/' ','?;
     */
-    visitSlash_with_default(ctx: Slash_with_defaultContext): string {
+    visitSlash_with_default(ctx: Slash_with_defaultContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("slash_with_default is parsed in param helper parser")
     }
     /*
@@ -632,42 +634,42 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | '*' ',' param_maybe_default+ kwds?
     | kwds;
     */
-    visitStar_etc(ctx: Star_etcContext): string {
+    visitStar_etc(ctx: Star_etcContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("star_etc is parsed in param helper parser")
     }
     /*
     kwds
     : '**' param_no_default;
     */
-    visitKwds(ctx: KwdsContext): string {
+    visitKwds(ctx: KwdsContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("kwds is parsed in param helper parser")
     }
     /*
     param_no_default
     : param ','?;
     */
-    visitParam_no_default(ctx: Param_no_defaultContext): string {
+    visitParam_no_default(ctx: Param_no_defaultContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("param_no_default is parsed in param helper parser")
     }
     /*
     param_no_default_star_annotation
     : param_star_annotation ','?;
     */
-    visitParam_no_default_star_annotation(ctx: Param_no_default_star_annotationContext): string {
+    visitParam_no_default_star_annotation(ctx: Param_no_default_star_annotationContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("param_no_default_star_annotation is parsed in param helper parser")
     }
     /*
     param_with_default
     : param default_assignment ','?;
     */
-    visitParam_with_default(ctx: Param_with_defaultContext): string {
+    visitParam_with_default(ctx: Param_with_defaultContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("param_with_default is parsed in param helper parser")
     }
     /*
     param_maybe_default
     : param default_assignment? ','?;
     */
-    visitParam_maybe_default(ctx: Param_maybe_defaultContext): string {
+    visitParam_maybe_default(ctx: Param_maybe_defaultContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("param_maybe_default is parsed in param helper parser")
     }
     /*
@@ -685,13 +687,13 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     /*
     annotation: ':' expression;
     */
-    visitAnnotation(ctx: AnnotationContext): string {
+    visitAnnotation(ctx: AnnotationContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("Annotations are not supported and shouldn't be attempted to be parsed.")
     }
     /*
     star_annotation: ':' star_expression;
     */
-    visitStar_annotation(ctx: Star_annotationContext): string {
+    visitStar_annotation(ctx: Star_annotationContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
         throw new Error("Star annotations are not supported and shouldn't be attempted to be parsed.")
     }
     /*
@@ -1470,7 +1472,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
                 case PythonLexer.PERCENT:
                     return `${this.visit(term)} % ${this.visit(factor)}`
                 case PythonLexer.AT:
-                    throw Error("TODO: Remove AT")
+                    throw new Error("TODO: Remove AT")
             }
         }
         return this.visit(factor)
