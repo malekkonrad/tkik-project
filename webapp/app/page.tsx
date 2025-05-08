@@ -128,7 +128,11 @@ export default function Home() {
         }
       </Select><br />
       <TextField variant='outlined' multiline value={code} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCode(e.target.value)} />
-      <SyntaxHighlighter language="lua" style={dark}>
+      <SyntaxHighlighter
+        language="lua"
+        style={dark}
+        showLineNumbers={true}
+      >
         {result}
       </SyntaxHighlighter>
       <p>{dTree}</p>

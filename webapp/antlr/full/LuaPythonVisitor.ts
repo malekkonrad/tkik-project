@@ -1214,12 +1214,13 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     star_expressions
     : star_expression (',' star_expression )* ','?;
     */
-    visitStar_expressions(ctx: Star_expressionsContext): string {
+    visitStar_expressions(ctx: Star_expressionsContext): string { 
+        // star_named_expressions DOES NOT allow := expressions
         const starExprs = ctx.star_expression_list()
-        if (starExprs.length > 1) {
-            return `table.unpack(tablesMerge(${
+        if (ctx.getChildCount() > 1) { // If there is more than 1 value OR there is last ',', then the star expression becomes a tuple
+            return `tablesMerge(${
                 starExprs.map((x) => `table.pack(${this.visit(x)})`).join(", ")
-            }))`
+            })`
         }
         return this.visit(starExprs[0])
     }
@@ -1237,7 +1238,14 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     star_named_expressions: star_named_expression (',' star_named_expression)* ','?;
     */
     visitStar_named_expressions(ctx: Star_named_expressionsContext): string {
-        return 'TODO star_named_expressions' // TODO
+        // star_named_expressions allows := expressions
+        const starNamedExprs = ctx.star_named_expression_list()
+        if (ctx.getChildCount() > 1) { // If there is more than 1 value OR there is last ',', then the star expression becomes a tuple
+            return `tablesMerge(${
+                starNamedExprs.map((x) => `table.pack(${this.visit(x)})`).join(", ")
+            })`
+        }
+        return this.visit(starNamedExprs[0])
     }
     /*
     star_named_expression
@@ -1245,7 +1253,9 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | named_expression;
     */
     visitStar_named_expression(ctx: Star_named_expressionContext): string {
-        return 'TODO star_named_expression' // TODO
+        const namedExpr = ctx.named_expression()
+        if (namedExpr != null) return this.visit(namedExpr)
+        return `table.unpack(${this.visit(ctx.bitwise_or())})`
     }
     /*
     assignment_expression
@@ -1260,7 +1270,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | expression;
     */
     visitNamed_expression(ctx: Named_expressionContext): string {
-        return 'TODO named_expression' // TODO
+        return this.visit(ctx.getChild(0))
     }
     /*
     disjunction
@@ -1575,7 +1585,28 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | '...';
     */
     visitAtom(ctx: AtomContext): string {
-        return 'TODO atom' // TODO
+        const t = ctx.getChild(0)
+        if (t instanceof TerminalNode) {
+            switch (t.symbol.type) {
+                case PythonLexer.NONE:
+                    return 'TODO' // TODO: Implement none
+                case PythonLexer.TRUE:
+                    return 'true'
+                case PythonLexer.FALSE:
+                    return 'false'
+                case PythonLexer.NUMBER:
+                    return t.getText() // TODO: Check number lexing if any adjustments have to be made
+                case PythonLexer.ELLIPSIS:
+                    return 'TODO' // TODO: Implement ellipsis (...)
+            }
+        }
+
+        /* TODO:
+        | (tuple | group | genexp)
+        | (list | listcomp)
+        | (dict | set | dictcomp | setcomp)
+        */
+        return this.visit(ctx.getChild(0))
     }
     /*
     group
@@ -1854,27 +1885,37 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : LBRACE double_starred_kvpairs? RBRACE;
     */
     visitDict(ctx: DictContext): string {
-        return 'TODO dict' // TODO
+        const dictParserHelper = new LuaPythonVisitorDictHelper(this)
+        const dd: DictData[] = dictParserHelper.visit(ctx.double_starred_kvpairs())
+
+        const args = dd.reduce((acc: string, val: DictData) => {
+            if (typeof(val) == 'string') { // kwarg
+                return acc + `}, ${val}, {`
+            } else {
+                return acc + `${(acc.at(-1) != '{') ? ', ' : ''}, [${val.key}] = ${val.value}`
+            }
+        }, '{') + '}'
+        return `objectMerge(${args})`
     }
     /*
     double_starred_kvpairs: double_starred_kvpair (',' double_starred_kvpair)* ','?;
     */
-    visitDouble_starred_kvpairs(ctx: Double_starred_kvpairsContext): string {
-        return 'TODO double_starred_kvpairs' // TODO
+    visitDouble_starred_kvpairs(ctx: Double_starred_kvpairsContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("double_starred_kvpairs is parsed in dict data helper parser")
     }
     /*
     double_starred_kvpair
     : '**' bitwise_or
     | kvpair;
     */
-    visitDouble_starred_kvpair(ctx: Double_starred_kvpairContext): string {
-        return 'TODO double_starred_kvpair' // TODO
+    visitDouble_starred_kvpair(ctx: Double_starred_kvpairContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("double_starred_kvpair is parsed in dict data helper parser")
     }
     /*
     kvpair: expression ':' expression;
     */
-    visitKvpair(ctx: KvpairContext): string {
-        return 'TODO kvpair' // TODO
+    visitKvpair(ctx: KvpairContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("kvpair is parsed in dict data helper parser")
     }
     // ---------------------------
     // Comprehensions & Generators
@@ -1948,7 +1989,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         }
         orderedArgsStr += '}'
         */
-        const orderedArgsStr = `${cargs.ordered_args.reduce((acc, val) => val.starred ? (acc += `}, ${val.expr}, {`) : (acc += `${(acc.at(-1) != '{') ? ', ' : ''}${val.expr}`),'{')}}`
+        const orderedArgsStr = `${cargs.ordered_args.reduce((acc, val) => val.starred ? (acc + `}, ${val.expr}, {`) : (acc + `${(acc.at(-1) != '{') ? ', ' : ''}${val.expr}`),'{')}}`
         return `tableMerge(${orderedArgsStr}), objectMerge(${cargs.kwargs.join(', ')})`
         // Should return string of two arrays (ordered_arguments, keyword_arguments)
     }
@@ -2254,6 +2295,58 @@ export class LuaPythonVisitorArgsHelper extends ParseTreeVisitor<Args> implement
             cargs.kwargs.push(this.baseParser.visit(expr))
         }
         return cargs
+    }
+}
+
+// TODO: This could potentially be done in a stack
+
+type DictEntryData = {
+    key: string,
+    value: string
+}
+type DictData = (DictEntryData | string)
+
+export class LuaPythonVisitorDictHelper extends ParseTreeVisitor<DictData[]> implements PythonParserVisitor<DictData[]> {
+    baseParser: LuaPythonVisitor
+
+    constructor(baseParser: LuaPythonVisitor) {
+        super();
+        this.baseParser = baseParser;
+    }
+
+    /*
+    double_starred_kvpairs: double_starred_kvpair (',' double_starred_kvpair)* ','?;
+    */
+    visitDouble_starred_kvpairs(ctx: Double_starred_kvpairsContext): DictData[] {
+        const dd: DictData[] = []
+        const double_starred_kvpair_list = ctx.double_starred_kvpair_list()
+        for (const double_starred_kvpair of double_starred_kvpair_list) {
+            dd.push(...this.visit(double_starred_kvpair))
+        }
+        return dd
+    }
+    /*
+    double_starred_kvpair
+    : '**' bitwise_or
+    | kvpair;
+    */
+    visitDouble_starred_kvpair(ctx: Double_starred_kvpairContext): DictData[] {
+        const kvpair = ctx.kvpair()
+        if (kvpair != null) {
+            return this.visit(kvpair)
+        } else {
+            return [this.baseParser.visit(ctx.bitwise_or())]
+        }
+    }
+    /*
+    kvpair: expression ':' expression;
+    */
+    visitKvpair(ctx: KvpairContext): DictData[] {
+        const de: DictEntryData = {
+            key: this.baseParser.visit(ctx.getChild(0)),
+            value: this.baseParser.visit(ctx.getChild(2))
+        }
+        return [de]
     }
 }
 
