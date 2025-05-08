@@ -197,12 +197,27 @@ import PythonLexer from "./PythonLexer";
 import polyfills from "./LuaPolyfills";
 
 const indent = (txt: string, chars: string = '  ') => txt.split('\n').map(x => chars + x).join('\n')
+type LoopData = {
+    hasElse: boolean,
+    identifier: number
+}
 
 export default class LuaPythonVisitor extends ParseTreeVisitor<string> implements PythonParserVisitor<string> {
+    private loopStack: LoopData[];
+    private lastLoopIdentifier: number;
+    private putBlock: boolean;
+    private loopContinueLabel: string = 'LOOP_CONT_';
+    private loopBreakLabel: string = 'LOOP_BRK_'
+
     constructor() {
         super()
+
+        this.loopStack = []
+        this.lastLoopIdentifier = 0
+        this.putBlock = false
         // TODO: Need to set up the stacks
     }
+
     // ==============
     // STARTING RULES
     // ==============
@@ -257,14 +272,23 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     */
     visitSimple_stmt(ctx: Simple_stmtContext): string {
         const ch = ctx.getChild(0)
+        let ld
         if (ch instanceof TerminalNode) {
             switch (ch.symbol.type) {
                 case PythonLexer.PASS:
                     return ''; // in lua there is no pass (it'll just be an empty block)
                 case PythonLexer.BREAK:
-                    return 'break';
+                    if (this.loopStack.length == 0) throw new Error("SyntaxError: 'break' outside loop")
+                    ld = this.loopStack.at(-1)
+                    if (ld?.hasElse) {
+                        return `goto ${this.loopBreakLabel}${ld.identifier}` // There is an else block and we should therefore use goto
+                    } else {
+                        return 'break'
+                    }
                 case PythonLexer.CONTINUE:
-                    throw new Error("TODO: Consider continue support (goto label)") // TODO
+                    if (this.loopStack.length == 0) throw new Error("SyntaxError: 'continue' not properly in loop")
+                    ld = this.loopStack.at(-1)
+                    return `goto ${this.loopContinueLabel}${ld?.identifier}`
             }
         }
         return this.visit(ch)
@@ -500,8 +524,10 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | simple_stmts;
     */
     visitBlock(ctx: BlockContext): string {
-        // TODO: delete do when it's not necessary
-        let result = 'do\n'
+        const shouldInsertDo = this.putBlock
+        this.putBlock = false // Reset
+
+        let result = shouldInsertDo ? 'do\n' : ''
         const stmts = ctx.statements()
         const simple_stmts = ctx.simple_stmts()
         if (stmts != null) {
@@ -509,7 +535,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         } else if (simple_stmts != null) {
             result += indent(this.visit(simple_stmts))
         }
-        result += '\nend'
+        if (shouldInsertDo) result += '\nend'
         return result
     }
     /*
@@ -562,6 +588,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         | 'async' 'def' name type_params? '(' params? ')' ('->' expression )? ':' func_type_comment? block;
     */
     visitFunction_def_raw(ctx: Function_def_rawContext): string {
+        const isAsync = ctx.ASYNC() != null
         const params = ctx.params()
         const parsed_params: Param[] = (params != null) ? (new LuaPythonVisitorParamHelper(this)).visit(params) : []
         const kwargs_name = parsed_params.filter(x => x.Kwargs == true).map(x => x.Name)[0]
@@ -715,7 +742,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         const elif_stmt = ctx.elif_stmt()
         if (elif_stmt != null) result += `\n${this.visit(elif_stmt)}`
         const else_block = ctx.else_block()
-        if (else_block != null) result += `\n${this.visit(else_block)}`
+        if (else_block != null) result += `else\n${this.visit(else_block)}`
         result += '\nend'
         return result
     }
@@ -729,7 +756,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         const elif_stmt = ctx.elif_stmt()
         if (elif_stmt != null) result += `\n${this.visit(elif_stmt)}`
         const else_block = ctx.else_block()
-        if (else_block != null) result += `\n${this.visit(else_block)}`
+        if (else_block != null) result += `else\n${this.visit(else_block)}`
         // end is already within if_stmt
         return result
     }
@@ -738,9 +765,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : 'else' ':' block;
     */
     visitElse_block(ctx: Else_blockContext): string {
-        let result = 'else\n'
-        result += this.visit(ctx.block())
-        return result
+        return this.visit(ctx.block()) // Only return the block (else should be inserted elsewhere if necessary)
     }
     // ---------------
     // While statement
@@ -750,10 +775,24 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : 'while' named_expression ':' block else_block?;
     */
     visitWhile_stmt(ctx: While_stmtContext): string {
+        const else_block = ctx.else_block()
+        const ld: LoopData = {
+            identifier: this.lastLoopIdentifier += 1,
+            hasElse: else_block != null
+        }
+        this.loopStack.push(ld)
+
         let result = `while ${this.visit(ctx.named_expression())} do\n`
         result += this.visit(ctx.block())
-        // TODO: How to handle else?
+        result += `::${this.loopContinueLabel}${ld.identifier}::`
         result += '\nend'
+        if (ld.hasElse) {
+            this.putBlock = true // adds the `do`, `end` block
+            result += this.visit(ctx.block())
+            result += `::${this.loopBreakLabel}${ld.identifier}::`
+        }
+
+        this.loopStack.pop()
         return result
     }
     // -------------
