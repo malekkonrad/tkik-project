@@ -6,15 +6,24 @@ Narzędzie webowe wykonywane w ramach projektu z przedmiotu Teoria Kompilacji i 
 - Kamil Pustelnik - kpustelnik@student.agh.edu.pl
 
 ## Założenia programu
-Projekt docelowo ma stać się translatorem (kompilatorem) kodu z języka programowania Python na kod o tożsamym rezultacie wykonywania w języku programowania Lua. Narzędzie będzie działało w przeglądarce jako strona statyczna, zatem całość zostanie napisana w języku JavaScript (do stworzenia i wyeksportowania strony internetowej zastosowane zostanie narzędzie Next.js). Do parsingu użyty zostanie Antlr 4.
+Projekt docelowo ma stać się translatorem (kompilatorem) kodu z języka programowania Python na kod o tożsamym rezultacie wykonywania w języku programowania Lua. Narzędzie będzie działało w przeglądarce jako strona statyczna, zatem całość zostanie napisana w języku TypeScript (do stworzenia i wyeksportowania strony internetowej zastosowane zostanie narzędzie Next.js). Do parsingu użyty zostanie Antlr 4.
 
 W celu wiernego odzwierciedlenia składni Pythona pierwotnie zaczęrpnięto gramatykę z repozytorium [GitHub](https://github.com/antlr/grammars-v4/tree/master/python/python3_13) i zmodyfikowano w celu ograniczenia obsługiwalnej składni (lista modyfikacji zostanie uzupełniona). Z tego samego repozytorium zaczerpnięto kod do prawidłowego przetwarzania tabulatorów.
 
+## Reasumując
+- Jak najdokładniejszy Kompilator Python -> Lua
+- Biblioteka - Antlr4 -> TypeScript
+- Interfejs - strona statyczna w Next.js
+
 # Opis tokenów i gramatyka
 [Spis tokenów](webapp/antlr/full/PythonLexer.tokens)
+
 [Skaner Antlr 4](webapp/antlr/full/PythonLexer.g4)
+
 [Parser Antlr 4](webapp/antlr/full/PythonParser.g4)
 
 # Instrukcja obsługi
-Narzędzie jest w trakcie tworzenia. Wersja podglądowa aktualizowana z każdym commitem dostępna jest [pod tym adresem](https://malekkonrad.github.io/tkik-project/).
+Wersja podglądowa aktualizowana z każdym commitem dostępna jest [pod tym adresem](https://malekkonrad.github.io/tkik-project/).
+
+# Najważniejsze funkcjonalności
 !!!TODO!!!
