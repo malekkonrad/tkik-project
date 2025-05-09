@@ -224,6 +224,7 @@ class ScopeData {
     getScopeDefinitions() {
         const definition_list = []
         for (const definition in this.definitions) definition_list.push(this.definitions[definition])
+        if (definition_list.length == 0) return ''
         return `local ${definition_list.join(', ')}`
     }
 

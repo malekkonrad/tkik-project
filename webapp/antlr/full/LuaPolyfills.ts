@@ -4,7 +4,7 @@ local org_print = print
 local getOrErr = function (name, str_name, isLocal)
     if name == nil then
         if isLocal then
-            error("NameError: name '" .. str_name .. "' is not defined)
+            error("NameError: name '" .. str_name .. "' is not defined")
         else
             error("UnboundLocalError: cannot access local variable '" .. str_name .. "' where it is not associated with a value")
         end
