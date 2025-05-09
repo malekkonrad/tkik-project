@@ -323,7 +323,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     ;
     */
     visitSimple_stmts(ctx: Simple_stmtsContext): string {
-        return ctx.simple_stmt_list().map((x) => this.visit(x)).filter(x => x.length > 0).join('\n')
+        return ctx.simple_stmt_list().map((x) => this.visit(x)).filter(x => x.length > 0).join(';\n')
     }
     /*
     simple_stmt
@@ -1769,12 +1769,10 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         const primary = ctx.primary()
         if (primary != null) {
             const name = ctx.name()
-            if (name != null) return `${this.visit(primary)}.${this.visit(name)}`
-            const genexp = ctx.genexp()
-            if (genexp != null) return 'TODO primary genexp' // TODO
+            if (name != null) return `${this.visit(primary)}.__getattr__(${this.visit(name)})`
             const slices = ctx.slices()
-            if (slices != null) return 'TODO primary slices' // TODO
-            // arguments
+            if (slices != null) return `${this.visit(primary)}.__getitem__(${this.visit(slices)})`
+            // TODO: genexp
             const args = ctx.arguments()
             return `${this.visit(primary)}(${(args != null) ? this.visit(args) : '{}, {}'})`
         }
@@ -1831,8 +1829,9 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             const txtName = this.visit(name)
             const cscope = this.scopeStack.at(-1)
             if (cscope == null) throw new Error("Scope not found")
-            const definition = cscope.deriveDefinition(txtName)
-            if (definition == null) throw new Error(`SyntaxError: name '${txtName}' is not defined`)
+
+            const definition = cscope.deriveDefinition(txtName) ?? cscope.createDefinitionIfNotExists(txtName)
+            cscope.usedDefinitions.add(txtName)
             return `getOrErr(${definition}, '${txtName}', ${(cscope.scopeType == ScopeType.GLOBAL) ? 'false' : 'true'})`
         }
 
@@ -2113,9 +2112,9 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         const star_named_expressions = ctx.star_named_expressions()
         if (star_named_expressions != null) {
             if (star_named_expressions.getChildCount() > 1) { // This indicates the result is a tuple
-                return this.visit(star_named_expressions) // TODO: Change to list class
+                return `list(${this.visit(star_named_expressions)})`
             } else {
-                return `{${this.visit(star_named_expressions)}}`
+                return `list({${this.visit(star_named_expressions)}})`
             }
         }
         return '{}'
@@ -2128,9 +2127,9 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         const star_named_expressions = ctx.star_named_expressions()
         if (star_named_expressions != null) {
             if (star_named_expressions.getChildCount() > 1) { // This indicates the result is a tuple
-                return this.visit(star_named_expressions) // TODO: Change to tuple class
+                return `tuple(${this.visit(star_named_expressions)})` // TODO: Change to tuple class
             } else {
-                return `{${this.visit(star_named_expressions)}}`
+                return `tuple({${this.visit(star_named_expressions)}})`
             }
         }
         return '{}'
@@ -2139,7 +2138,8 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     set: LBRACE star_named_expressions RBRACE;
     */
     visitSet(ctx: SetContext): string {
-        return 'TODO set' // TODO
+        const starNamedExprs = ctx.star_named_expressions()
+        return `set(${this.visit(starNamedExprs)})`
     }
     // -----
     // Dicts
@@ -2324,7 +2324,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     }
     /*
     star_target
-    : '*' (star_target)
+    : '*' target_with_star_atom
     | target_with_star_atom;
     */
     visitStar_target(ctx: Star_targetContext): string {
@@ -2370,16 +2370,34 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | atom;
     */
     visitT_primary(ctx: T_primaryContext): string {
-        return 'TODO t_primary' // TODO
+        const atom = ctx.atom()
+        if (atom != null) return this.visit(atom)
+        const tprimary = ctx.t_primary()
+        if (tprimary != null) {
+            const name = ctx.name()
+            if (name != null) return `${this.visit(tprimary)}.__getattr__(${this.visit(name)})`
+            const slices = ctx.slices()
+            if (slices != null) return `${this.visit(tprimary)}.__getitem__(${this.visit(slices)})`
+            // TODO: genexp
+            const args = ctx.arguments()
+            return `${this.visit(tprimary)}(${(args != null) ? this.visit(args) : '{}, {}'})`
+        }
+        throw new Error("Unknown t_primary handling")
     }
     // --------------------------
     // Targets for del statements
     // --------------------------
+    /* eg.
+    del [x, y]
+    del [[x], y]
+    del (((x)), y)
+    ^ all just delete `x` and `y` 
     /*
     del_targets: del_target (',' del_target)* ','?;
     */
     visitDel_targets(ctx: Del_targetsContext): string {
-        return 'TODO del_targets' // TODO
+        const del_target_list = ctx.del_target_list()
+        return del_target_list.map(x => this.visit(x)).join('\n')
     }
     /*
     del_target
@@ -2387,7 +2405,16 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | del_t_atom;
     */
     visitDel_target(ctx: Del_targetContext): string {
-        return 'TODO del_target' // TODO
+        const del_t_atom = ctx.del_t_atom()
+        if (del_t_atom != null) return this.visit(del_t_atom)
+        const t_primary = ctx.t_primary()
+        if (t_primary != null) {
+            const name = ctx.name()
+            if (name != null) return `${this.visit(t_primary)}.__delattr__(${this.visit(name)})`
+            const slices = ctx.slices()
+            if (slices != null) return `${this.visit(t_primary)}.__delitem__(${this.visit(slices)})`
+        }
+        throw new Error("Unknown del_target handling")
     }
     /*
     del_t_atom
@@ -2397,7 +2424,19 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | '[' del_targets? ']';
     */
     visitDel_t_atom(ctx: Del_t_atomContext): string {
-        return 'TODO del_t_atom' // TODO
+        const name = ctx.name()
+        if (name != null) {
+            const cscope = this.scopeStack.at(-1)
+            if (cscope == null) throw new Error("Scope not found")
+            const txtName = this.visit(name)
+            const definition = cscope.createDefinitionIfNotExists(txtName)
+            return `${definition} = nil`
+        }
+        const del_target = ctx.del_target()
+        if (del_target) return this.visit(del_target)
+        const del_targets = ctx.del_targets()
+        if (del_targets) return this.visit(del_targets)
+        throw new Error("Unknown del_t_atom handling")
     }
     // ---------------
     // TYPING ELEMENTS

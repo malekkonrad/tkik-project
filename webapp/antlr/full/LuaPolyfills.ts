@@ -139,16 +139,82 @@ local print = defFunction(function (objects, sep, endl)
 end, { { Default = ' ', Name = "sep", OnlyNamed = true }, { Default = '\\n', Name = "end", OnlyNamed = true } }, true, false)
 
 local len = defFunction(function (s)
-    if type(s) == 'table' then
-        return #s
+    local m = getmetatable(s)
+    if m.__len__ ~= nil then
+        return m.__len__
     end
-    -- TODO: Len of different objects?
+    -- #table shouldn't technically be required
 end, { { Name = "s" } }, false, false)
 
 local input = defFunction(function (prompt)
     print(tableMerge({prompt}), objectMerge({ ['end'] = '' }))
     return io.read()
 end, { { Default = '', Name = "prompt" } }, false, false)
+
+local list = {}
+setmetatable(list, {
+    __call = function (_, t)
+        local inst = {
+            _data = t
+        }
+        return setmetatable(inst, { -- TODO: Add the methods
+            append = function (v) table.insert(inst._data, v) end;
+            insert = function (i, v) table.insert(inst._data, i, v) end;
+            clear = function () inst._data = {} end;
+            __str__ = function ()
+
+            end,
+            __len__ = function () return #inst._data end;
+            __bool__ = function () return true end;
+            __getitem__ = function (i) return inst._data[i] end;
+        })
+    end
+})
+
+local tuple = {}
+setmetatable(tuple, {
+    _call = function (_, t)
+        local inst = {
+            _data = t
+        }
+        return setmetatable(inst, { -- TODO: Add the methods
+            __len__ = function () return #inst._data end;
+            __bool__ = function () return true end;
+        })
+    end
+})
+
+local set = {}
+setmetatable(set, {
+    _call = function (_, t)
+        local inst = {
+            _data = {}
+        }
+        for _, v in ipairs(t) do inst._data[v] = true end
+        return setmetatable(inst, { -- TODO: Add the methods
+            __bool__ = function () return true end;
+        })
+    end
+})
+
+local dict = {}
+setmetatable(dict, {
+    _call = function (_, t)
+        local inst = {
+            _data = t
+        }
+        return setmetatable(inst, { -- TODO: Add the methods
+            __bool__ = function () return true end;
+            __getitem__ = function (i) return inst._data[i] end;
+            __setitem__ = function (i, v) return inst._data[i] = v end;
+        })
+    end
+})
+
+local None = {}
+setmetatable(None, { -- TODO: Add the methods
+    __bool__ = function () return false end
+})
 `
 
 // Global definitions that are supposed to be reachable in code
@@ -156,7 +222,7 @@ export const globalDefinitions: { [Name: string]: string } = {
     ["print"]: 'print',
     ["len"]: 'len',
     ["input"]: 'input',
-    ["None"]: 'None'
+    ["None"]: 'None',
 }
 
 export default polyfills
