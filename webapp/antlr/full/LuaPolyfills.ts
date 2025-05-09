@@ -130,6 +130,10 @@ local defFunction = function (func, argsData, has_largs, has_kwargs)
 end
 
 -- Basic functions
+local rawCall = defFunction(function (objects, sep, endl)
+    return objects[1](table.unpack(objects, 2, objects.n))
+end, {}, true, false)
+
 local print = defFunction(function (objects, sep, endl)
     local res = {}
     for _, object in ipairs(objects) do
@@ -247,6 +251,7 @@ export const globalDefinitions: { [Name: string]: string } = {
     ["print"]: 'print',
     ["len"]: 'len',
     ["input"]: 'input',
+    ['rawCall']: 'rawCall',
     ["None"]: 'None',
 }
 
