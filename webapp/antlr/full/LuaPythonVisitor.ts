@@ -1455,7 +1455,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         // star_named_expressions allows := expressions
         const starNamedExprs = ctx.star_named_expression_list()
         if (ctx.getChildCount() > 1) { // If there is more than 1 value OR there is last ',', then the star expression becomes a tuple
-            return `tablesMerge(${
+            return `tableMerge(${
                 starNamedExprs.map((x) => `table.pack(${this.visit(x)})`).join(", ")
             })`
         }
