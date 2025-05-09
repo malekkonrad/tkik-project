@@ -809,8 +809,9 @@ star_targets_tuple_seq
     : star_target (',' | (',' star_target )+ ','?)
     ;
 
+// NOTE  DEVIATION: Negative lookahead is missing below `(!'*' star_target)`, but `target_with_star_atom` does not allow * as first character anyways so it's been replaced
 star_target
-    : '*' (star_target)
+    : '*' target_with_star_atom
     | target_with_star_atom;
 
 target_with_star_atom

@@ -1,5 +1,17 @@
 const polyfills = `-- Lua Polyfills
 local org_print = print
+
+local getOrErr = function (name, str_name, isLocal)
+    if name == nil then
+        if isLocal then
+            error("NameError: name '" .. str_name .. "' is not defined)
+        else
+            error("UnboundLocalError: cannot access local variable '" .. str_name .. "' where it is not associated with a value")
+        end
+    end
+    return name
+end
+
 function shortHandIf(a, b, c)
     if a then return b end
     return c
@@ -141,4 +153,12 @@ local input = defFunction(function (prompt)
     return io.read()
 end, { { Default = '', Name = "prompt" } }, false, false)
 `
+
+// Global definitions that are supposed to be reachable in code
+export const globalDefinitions: { [Name: string]: string } = {
+    ["print"]: 'print',
+    ["len"]: 'len',
+    ["input"]: 'input'
+}
+
 export default polyfills

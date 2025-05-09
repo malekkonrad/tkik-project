@@ -194,17 +194,75 @@ import {
 } from "./PythonParser";
 import PythonParserVisitor from "./PythonParserVisitor";
 import PythonLexer from "./PythonLexer";
-import polyfills from "./LuaPolyfills";
+import polyfills, { globalDefinitions } from "./LuaPolyfills";
 
 const indent = (txt: string, chars: string = '  ') => txt.split('\n').map(x => chars + x).join('\n')
 type LoopData = {
     hasElse: boolean,
     identifier: number
 }
+enum ScopeType {
+    GLOBAL,
+    FUNCTION,
+    CLASS
+}
+class ScopeData {
+    public loopStack: LoopData[] = []
+    public definitions: { [Name: string]: string } = {}
+    public hiddenDefinitions: { [Name: string]: string } = {} // Won't be redefined
+    public scopeId: number
+    public lastDefinitionIdentifier = 0;
+    public scopeType;
+    public parentScope: ScopeData | null;
+    public usedDefinitions: Set<string> = new Set<string>();
+    constructor (scopeId: number, scopeType: ScopeType, parentScope: ScopeData | null) {
+        this.scopeId = scopeId
+        this.scopeType = scopeType;
+        this.parentScope = parentScope;
+    }
+
+    getScopeDefinitions() {
+        const definition_list = []
+        for (const definition in this.definitions) definition_list.push(this.definitions[definition])
+        return `local ${definition_list.join(', ')}`
+    }
+
+    getDefinition(name: string): (string | undefined) {
+        const hiddenDefinition: string | undefined = this.hiddenDefinitions[name]
+        if (hiddenDefinition != null) return hiddenDefinition
+        const curDefinition: string | undefined = this.definitions[name]
+        if (curDefinition != null) return curDefinition
+        return undefined
+    }
+
+    deriveDefinition(name: string): (string | undefined) {
+        const definition = this.getDefinition(name)
+        if (definition != null) return definition
+        if (this.parentScope != null) {
+            const parentDefinition = this.parentScope.deriveDefinition(name)
+            if (parentDefinition != null) return parentDefinition
+        }
+        return undefined
+    }
+
+    createDefinitionIfNotExists(name: string, hidden: boolean = false): string {
+        const definition = this.getDefinition(name)
+        if (definition != null) return definition
+
+        const nname = `${name}_${this.scopeId}_${this.lastDefinitionIdentifier++}`;
+        (hidden ? this.hiddenDefinitions : this.definitions)[name] = nname
+        return nname
+    }
+
+    addDefinition(name: string, definition: string, hidden: boolean = false): void {
+        (hidden ? this.hiddenDefinitions : this.definitions)[name] = definition
+    }
+}
 
 export default class LuaPythonVisitor extends ParseTreeVisitor<string> implements PythonParserVisitor<string> {
-    private loopStack: LoopData[];
+    private scopeStack: ScopeData[];
     private lastLoopIdentifier: number;
+    private lastScopeIdentifier: number;
     private putBlock: boolean;
     private loopContinueLabel: string = 'LOOP_CONT_';
     private loopBreakLabel: string = 'LOOP_BRK_'
@@ -212,10 +270,16 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     constructor() {
         super()
 
-        this.loopStack = []
         this.lastLoopIdentifier = 0
+        this.lastScopeIdentifier = 0
         this.putBlock = false
-        // TODO: Need to set up the stacks
+        const globalScope: ScopeData = new ScopeData(this.lastScopeIdentifier++, ScopeType.GLOBAL, null)
+        this.scopeStack = [globalScope]
+
+        // Load the global polyfill definitions
+        for (const definition in globalDefinitions) {
+            globalScope.addDefinition(definition, globalDefinitions[definition], true)
+        }
     }
 
     // ==============
@@ -227,7 +291,14 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     */
     visitProgram(ctx: ProgramContext): string {
         const statements = ctx.statements()
-        if (statements != null) return polyfills + "\n-- Program content\n" + this.visit(statements); // TODO: Only add polyfills when necessary
+        if (statements != null) {
+            let result = polyfills
+            result += "\n-- Program content\n"
+            const program = this.visit(statements)
+            result += this.scopeStack.at(-1)?.getScopeDefinitions() + '\n' // Inject scope definitions
+            result += program
+            return result
+        }
         return ''
     }
     // ==================
@@ -237,7 +308,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     statements: statement+;
     */
     visitStatements(ctx: StatementsContext): string {
-        return ctx.children?.map((x) => this.visit(x))?.join('\n') ?? ''
+        return ctx.statement_list().map((x) => this.visit(x)).filter(x => x.length > 0).join('\n')
     }
     /*
     statement: compound_stmt | simple_stmts;
@@ -251,7 +322,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     ;
     */
     visitSimple_stmts(ctx: Simple_stmtsContext): string {
-        return ctx.simple_stmt_list().map((x) => this.visit(x)).join('\n')
+        return ctx.simple_stmt_list().map((x) => this.visit(x)).filter(x => x.length > 0).join('\n')
     }
     /*
     simple_stmt
@@ -272,22 +343,26 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     */
     visitSimple_stmt(ctx: Simple_stmtContext): string {
         const ch = ctx.getChild(0)
-        let ld
+        let ld, scope
         if (ch instanceof TerminalNode) {
             switch (ch.symbol.type) {
                 case PythonLexer.PASS:
                     return ''; // in lua there is no pass (it'll just be an empty block)
                 case PythonLexer.BREAK:
-                    if (this.loopStack.length == 0) throw new Error("SyntaxError: 'break' outside loop")
-                    ld = this.loopStack.at(-1)
+                    scope = this.scopeStack.at(-1)
+                    if (scope == null) throw new Error("Scope not found") // Should never happen
+                    if (scope.loopStack.length == 0) throw new Error("SyntaxError: 'break' outside loop")
+                    ld = scope.loopStack.at(-1)
                     if (ld?.hasElse) {
                         return `goto ${this.loopBreakLabel}${ld.identifier}` // There is an else block and we should therefore use goto
                     } else {
                         return 'break'
                     }
                 case PythonLexer.CONTINUE:
-                    if (this.loopStack.length == 0) throw new Error("SyntaxError: 'continue' not properly in loop")
-                    ld = this.loopStack.at(-1)
+                    scope = this.scopeStack.at(-1)
+                    if (scope == null) throw new Error("Scope not found") // Should never happen
+                    if (scope.loopStack.length == 0) throw new Error("SyntaxError: 'continue' not properly in loop")
+                    ld = scope.loopStack.at(-1)
                     return `goto ${this.loopContinueLabel}${ld?.identifier}`
             }
         }
@@ -318,6 +393,15 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         | single_target augassign (yield_expr | star_expressions);
     */
     visitAssignment(ctx: AssignmentContext): string {
+        const name = ctx.name()
+        if (name != null) { // name ':' expression ('=' annotated_rhs )?
+            /* eg.
+                x: int
+                y: str = "hello"
+            */
+            // Ignore the expressions as the types are not supported
+            return `${this.visit(name)} = ${this.visit(ctx.annotated_rhs())}`
+        }
         const augassign = ctx.augassign()
         if (augassign != null) { // single_target augassign (yield_expr | star_expressions)
             /* eg.
@@ -327,6 +411,9 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             */
             const sin_target = ctx.single_target()
             const star_exprs = ctx.star_expressions()
+            if (star_exprs != null && star_exprs.getChildCount() == 1 && (star_exprs.getChild(0) as Star_expressionContext).bitwise_or() != null) {
+                throw new Error("SyntaxError: can't use starred expression here")
+            }
             const target = this.visit(sin_target)
             const yield_expr = ctx.yield_expr()
 
@@ -334,29 +421,29 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             const augassign_op = ctx.augassign().getChild(0) as TerminalNode
             switch (augassign_op.symbol.type) {
                 case PythonLexer.PLUSEQUAL:
-                    return `${target} = ${target} + ${this.visit(star_exprs)}`
+                    return `${target} = ${target} + ${this.visit(star_exprs ?? yield_expr)}`
                 case PythonLexer.MINEQUAL:
-                    return `${target} = ${target} - ${this.visit(star_exprs)}`
+                    return `${target} = ${target} - ${this.visit(star_exprs ?? yield_expr)}`
                 case PythonLexer.STAREQUAL:
-                    return `${target} = ${target} * ${this.visit(star_exprs)}`
+                    return `${target} = ${target} * ${this.visit(star_exprs ?? yield_expr)}`
                 case PythonLexer.SLASHEQUAL:
-                    return `${target} = ${target} / ${this.visit(star_exprs)}`
+                    return `${target} = ${target} / ${this.visit(star_exprs ?? yield_expr)}`
                 case PythonLexer.PERCENTEQUAL:
-                    return `${target} = ${target} % ${this.visit(star_exprs)}`
+                    return `${target} = ${target} % ${this.visit(star_exprs ?? yield_expr)}`
                 case PythonLexer.AMPEREQUAL:
-                    return `${target} = bit.band(${target}, ${this.visit(star_exprs)})`
+                    return `${target} = bit.band(${target}, ${this.visit(star_exprs ?? yield_expr)})`
                 case PythonLexer.VBAREQUAL:
-                    return `${target} = bit.bor(${target}, ${this.visit(star_exprs)})`
+                    return `${target} = bit.bor(${target}, ${this.visit(star_exprs ?? yield_expr)})`
                 case PythonLexer.CIRCUMFLEXEQUAL:
-                    return `${target} = bit.bxor(${target}, ${this.visit(star_exprs)})`
+                    return `${target} = bit.bxor(${target}, ${this.visit(star_exprs ?? yield_expr)})`
                 case PythonLexer.LEFTSHIFTEQUAL:
-                    return `${target} = bit.lshift(${target}, ${this.visit(star_exprs)})`
+                    return `${target} = bit.lshift(${target}, ${this.visit(star_exprs ?? yield_expr)})`
                 case PythonLexer.RIGHTSHIFTEQUAL:
-                    return `${target} = bit.rshift(${target}, ${this.visit(star_exprs)})`
+                    return `${target} = bit.rshift(${target}, ${this.visit(star_exprs ?? yield_expr)})`
                 case PythonLexer.DOUBLESTAREQUAL:
-                    return `${target} = math.pow(${target}, ${this.visit(star_exprs)})`
+                    return `${target} = math.pow(${target}, ${this.visit(star_exprs ?? yield_expr)})`
                 case PythonLexer.DOUBLESLASHEQUAL:
-                    return `${target} = math.floor(${target} / ${this.visit(star_exprs)})`
+                    return `${target} = math.floor(${target} / ${this.visit(star_exprs ?? yield_expr)})`
                 default:
                     throw new Error("Unknown augassign token")
             }
@@ -368,7 +455,11 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     */
     visitAnnotated_rhs(ctx: Annotated_rhsContext): string {
         const star_exprs = ctx.star_expressions()
+        if (star_exprs != null && star_exprs.getChildCount() == 1 && (star_exprs.getChild(0) as Star_expressionContext).bitwise_or() != null) {
+            throw new Error("SyntaxError: can't use starred expression here")
+        }
         if (star_exprs != null) return this.visit(star_exprs)
+        return this.visit(ctx.yield_expr())
     }
     /*
     augassign
@@ -393,9 +484,16 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     return_stmt : 'return' star_expressions?;
     */
     visitReturn_stmt(ctx: Return_stmtContext): string {
-        const starExpr = ctx.star_expressions()
-        if (starExpr == null) return 'return'
-        return `return ${this.visit(starExpr)}`
+        const currentScope = this.scopeStack.at(-1)
+        if (currentScope == null) throw new Error("Scope not found")
+        if (currentScope.scopeType != ScopeType.FUNCTION) throw new Error("SyntaxError: 'return' outside function")
+
+        const star_exprs = ctx.star_expressions()
+        if (star_exprs != null && star_exprs.getChildCount() == 1 && (star_exprs.getChild(0) as Star_expressionContext).bitwise_or() != null) {
+            throw new Error("SyntaxError: can't use starred expression here")
+        }
+        if (star_exprs == null) return 'return'
+        return `return ${this.visit(star_exprs)}`
     }
     /*
     raise_stmt
@@ -408,24 +506,73 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     global_stmt: 'global' name (',' name)*;
     */
     visitGlobal_stmt(ctx: Global_stmtContext): string {
-        // Global does not exist in lua
-        // TODO: Need to figure out how to handle local variables
-        return `--[[ TODO global ${ctx.name_list().map(x => this.visit(x)).join(',')} ]]`
+        // Global =  variable from a global scope
+        // Need to define it if it does not already exist
+        const globalScope = this.scopeStack.at(0)
+        const currentScope = this.scopeStack.at(-1)
+        if (globalScope == null || currentScope == null) throw new Error("Scope not found")
+        
+        const name_list = ctx.name_list()
+        for (const name of name_list) {
+            const txtName = this.visit(name)
+            if (currentScope.usedDefinitions.has(txtName)) {
+                throw new Error(`SyntaxError: name '${txtName}' is used prior to global declaration`)
+            }
+            const definition = globalScope.createDefinitionIfNotExists(txtName)
+            if (currentScope.hiddenDefinitions[txtName] != null && currentScope.hiddenDefinitions[txtName] != definition) {
+                throw new Error(`SyntaxError: name '${txtName}' is nonlocal and global`)
+            }
+            if (currentScope.getDefinition(txtName)) {
+                throw new Error(`SyntaxError: name '${txtName}' is assigned to before global declaration`)
+            }
+            // Add hidden definition as it should not be redefined within current scope (unless we are in the global scope)
+            if (currentScope != globalScope) currentScope.addDefinition(txtName, definition, true)
+        }
+        return ''
     }
     /*
     nonlocal_stmt: 'nonlocal' name (',' name)*;
     */
     visitNonlocal_stmt(ctx: Nonlocal_stmtContext): string {
-        // TODO: What's nonlocal?
-        return `--[[ TODO nonlocal ${ctx.name_list().map(x => this.visit(x)).join(',')} ]]`
+        // Nonlocal = finds a variable in upper scope (except global scope) and applies
+        if (this.scopeStack.length <= 1) {
+            throw new Error("SyntaxError: nonlocal declaration not allowed at module level")
+        }
+        const currentScope = this.scopeStack.at(-1)
+        if (currentScope == null) throw new Error("Scope not found")
+
+        const name_list = ctx.name_list()
+        for (const name of name_list) {
+            const txtName = this.visit(name)
+            // Find the first applicable scope
+            let nameDefinition = undefined
+            for (let i = this.scopeStack.length - 2; i > 0; ++i) {
+                const scopeDefinition = this.scopeStack[i].getDefinition(txtName)
+                if (scopeDefinition != null) {
+                    nameDefinition = scopeDefinition
+                    break
+                }
+            }
+            if (nameDefinition == null) throw new Error(`SyntaxError: no binding for nonlocal '${txtName}' found`)
+            if (currentScope.usedDefinitions.has(txtName)) {
+                throw new Error(`SyntaxError: name '${txtName}' is used prior to nonlocal declaration`)
+            }
+            if (currentScope.hiddenDefinitions[txtName] != null && currentScope.hiddenDefinitions[txtName] != nameDefinition) {
+                throw new Error(`SyntaxError: name '${txtName}' is nonlocal and global`)
+            }
+            if (currentScope.getDefinition(txtName)) {
+                throw new Error(`SyntaxError: name '${txtName}' is assigned to before nonlocal declaration`)
+            }
+            currentScope.addDefinition(txtName, nameDefinition, true)
+        }
+        return ''
     }
     /*
     del_stmt
     : 'del' del_targets;
     */
     visitDel_stmt(ctx: Del_stmtContext): string {
-        // TODO: Need to confirm if that's fully alright
-        return `${this.visit(ctx.del_targets())} = nil`
+        return this.visit(ctx.del_targets()) // Everything is created within del_targets
     }
     /*
     yield_stmt: yield_expr;
@@ -609,14 +756,31 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             return `{ ${props.join(', ')} }`
         })
 
+        const cscope = this.scopeStack.at(-1)
+        if (cscope == null) throw new Error("Stack not found")
+
+        const txtName = this.visit(ctx.name())
+        const definition = cscope.createDefinitionIfNotExists(txtName)
+
+        const nscope = new ScopeData(this.lastScopeIdentifier++, ScopeType.FUNCTION, cscope)
+        this.scopeStack.push(nscope)
         // TODO: async
-        let result = `local ${this.visit(ctx.name())} = defFunction(`
-        result += `function (${lua_func_params.join(', ')})\n`
-        result += this.visit(ctx.block())
+        let result = `${definition} = defFunction(`
+        result += `function (${lua_func_params.map(x => nscope.createDefinitionIfNotExists(x, true)).join(', ')})\n`
+        let inner = ''
+        //if (isAsync) inner += 'coroutine.create(function()'
+        inner += this.visit(ctx.block())
+        /*if (isAsync) {
+            inner += 'end)'
+            inner = indent(inner)
+        }*/
+        result += nscope.getScopeDefinitions()
+        result += inner
         result += `\nend, { ${lua_rest_args.join(', ')} }, ` // argsData
         result += `${(args_name != null) ? 'true' : 'false'}, `
         result += `${(kwargs_name != null) ? 'true' : 'false'})`
-        // TODO: expression?
+        // Ignoring the expression
+        this.scopeStack.pop()
         return result
     }
     // -------------------
@@ -775,12 +939,15 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : 'while' named_expression ':' block else_block?;
     */
     visitWhile_stmt(ctx: While_stmtContext): string {
+        const cscope = this.scopeStack.at(-1)
+        if (cscope == null) throw new Error("Scope not found")
+
         const else_block = ctx.else_block()
         const ld: LoopData = {
             identifier: this.lastLoopIdentifier += 1,
             hasElse: else_block != null
         }
-        this.loopStack.push(ld)
+        cscope.loopStack.push(ld)
 
         let result = `while ${this.visit(ctx.named_expression())} do\n`
         result += this.visit(ctx.block())
@@ -792,7 +959,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             result += `::${this.loopBreakLabel}${ld.identifier}::`
         }
 
-        this.loopStack.pop()
+        cscope.loopStack.pop()
         return result
     }
     // -------------
@@ -1174,8 +1341,8 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     type_alias
     : 'type' name type_params? '=' expression;
     */
-    visitType_alias(ctx: Type_aliasContext): string {
-        return 'TODO type_alias' // TODO
+    visitType_alias(ctx: Type_aliasContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        return '' // Types are ignored as they don't exist within lua
     }
     // --------------------------
     // Type parameter declaration
@@ -1183,14 +1350,14 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     /*
     type_params: '[' type_param_seq  ']';
     */
-    visitType_params(ctx: Type_paramsContext): string {
-        return 'TODO type_params' // TODO
+    visitType_params(ctx: Type_paramsContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("Types are not implemented and should not be called.")
     }
     /*
     type_param_seq: type_param (',' type_param)* ','?;
     */
-    visitType_param_seq(ctx: Type_param_seqContext): string {
-        return 'TODO type_param_seq' // TODO
+    visitType_param_seq(ctx: Type_param_seqContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("Types are not implemented and should not be called.")
     }
     /*
     type_param
@@ -1198,26 +1365,26 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | '*'  name type_param_starred_default?
     | '**' name type_param_default?;
     */
-    visitType_param(ctx: Type_paramContext): string {
-        return 'TODO type_param' // TODO
+    visitType_param(ctx: Type_paramContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("Types are not implemented and should not be called.")
     }
     /*
     type_param_bound: ':' expression;
     */
-    visitType_param_bound(ctx: Type_param_boundContext): string {
-        return 'TODO type_param_bound' // TODO
+    visitType_param_bound(ctx: Type_param_boundContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("Types are not implemented and should not be called.")
     }
     /*
     type_param_default: '=' expression;
     */
-    visitType_param_default(ctx: Type_param_defaultContext): string {
-        return 'TODO type_param_default' // TODO
+    visitType_param_default(ctx: Type_param_defaultContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("Types are not implemented and should not be called.")
     }
     /*
     type_param_starred_default: '=' star_expression;
     */
-    visitType_param_starred_default(ctx: Type_param_starred_defaultContext): string {
-        return 'TODO type_param_starred_default' // TODO
+    visitType_param_starred_default(ctx: Type_param_starred_defaultContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("Types are not implemented and should not be called.")
     }
     // -----------
     // EXPRESSIONS
@@ -1227,7 +1394,14 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : expression (',' expression )* ','?;
     */
     visitExpressions(ctx: ExpressionsContext): string {
-        return 'TODO expressions' // TODO
+        // This seems to only be used within eval
+        const exprs = ctx.expression_list()
+        if (ctx.getChildCount() > 1) { // If there is more than 1 value OR there is last ',', then the star expression becomes a tuple
+            return `tablesMerge(${
+                exprs.map((x) => `table.pack(${this.visit(x)})`).join(", ")
+            })`
+        }
+        return this.visit(exprs[0])
     }
     /*
     expression
@@ -1301,7 +1475,18 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : name ':=' expression;
     */
     visitAssignment_expression(ctx: Assignment_expressionContext): string {
-        return 'TODO assignment_expression' // TODO
+        const cscope = this.scopeStack.at(-1)
+        if (cscope == null) throw new Error("Scope not found")
+
+        const name = ctx.name()
+        const txtName = this.visit(name)
+
+        let result = `function() `
+        result += `local v = ${this.visit(ctx.expression())}; `
+        result += `${cscope.createDefinitionIfNotExists(txtName)} = v; `
+        result += 'return v '
+        result += 'end)'
+        return result
     }
     /*
     named_expression
@@ -1517,11 +1702,11 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
                 case PythonLexer.SLASH:
                     return `${this.visit(term)} / ${this.visit(factor)}`
                 case PythonLexer.DOUBLESLASH:
-                    return `math.floor(${this.visit(term)} / ${this.visit(factor)})`
+                    return `${this.visit(term)} // ${this.visit(factor)}` // Lua 5.3+
                 case PythonLexer.PERCENT:
                     return `${this.visit(term)} % ${this.visit(factor)}`
                 case PythonLexer.AT:
-                    throw new Error("TODO: Remove AT")
+                    throw new Error("@ operator is not supported in Lua") // TODO: Implement using classes
             }
         }
         return this.visit(factor)
@@ -1640,6 +1825,16 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             }
         }
 
+        const name = ctx.name()
+        if (name != null) { // Need to parse as a variable
+            const txtName = this.visit(name)
+            const cscope = this.scopeStack.at(-1)
+            if (cscope == null) throw new Error("Scope not found")
+            const definition = cscope.deriveDefinition(txtName)
+            if (definition == null) throw new Error(`SyntaxError: name '${txtName}' is not defined`)
+            return `getOrErr(${definition}, '${txtName}', ${(cscope.scopeType == ScopeType.GLOBAL) ? 'false' : 'true'})`
+        }
+
         /* TODO:
         | (tuple | group | genexp)
         | (list | listcomp)
@@ -1682,12 +1877,21 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             return `{ ${props.join(', ')} }`
         })
 
+        const cscope = this.scopeStack.at(-1)
+        if (cscope == null) throw new Error("Stack not found")
+            
+        const nscope = new ScopeData(this.lastScopeIdentifier++, ScopeType.FUNCTION, cscope)
+        this.scopeStack.push(nscope)
+
         let result = `defFunction(\n`
-        result += `function (${lua_func_params.join(', ')})\n`
-        result += this.visit(ctx.expression())
+        result += `function (${lua_func_params.map(x => nscope.createDefinitionIfNotExists(x, true)).join(', ')})\n`
+        const inner = this.visit(ctx.expression())
+        result += nscope.getScopeDefinitions()
+        result += inner
         result += `\nend, { ${lua_rest_args.join(', ')} }, ` // argsData
         result += `${(args_name != null) ? 'true' : 'false'}, `
         result += `${(kwargs_name != null) ? 'true' : 'false'})`
+        this.scopeStack.pop()
         return result
     }
     /*
@@ -1901,14 +2105,34 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : '[' star_named_expressions? ']';
     */
     visitList(ctx: ListContext): string {
-        return 'TODO list' // TODO
+        // star_named_expressions returns tuple or single value
+        // if it is a single value, it should therefore convert it to a table
+        // if it is already a tuple packed by star_named_expressions, then no conversion should be done
+        // DISCLAIMER: the `single value` could be a tuple and then it should be packed in another table!
+        const star_named_expressions = ctx.star_named_expressions()
+        if (star_named_expressions != null) {
+            if (star_named_expressions.getChildCount() > 1) { // This indicates the result is a tuple
+                return this.visit(star_named_expressions) // TODO: Change to list class
+            } else {
+                return `{${this.visit(star_named_expressions)}}`
+            }
+        }
+        return '{}'
     }
     /*
     tuple
     : '(' (star_named_expression ',' star_named_expressions?  )? ')';
     */
     visitTuple(ctx: TupleContext): string {
-        return 'TODO tuple' // TODO
+        const star_named_expressions = ctx.star_named_expressions()
+        if (star_named_expressions != null) {
+            if (star_named_expressions.getChildCount() > 1) { // This indicates the result is a tuple
+                return this.visit(star_named_expressions) // TODO: Change to tuple class
+            } else {
+                return `{${this.visit(star_named_expressions)}}`
+            }
+        }
+        return '{}'
     }
     /*
     set: LBRACE star_named_expressions RBRACE;

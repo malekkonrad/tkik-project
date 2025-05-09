@@ -10058,10 +10058,8 @@ export default class PythonParser extends Parser {
 				{
 				this.state = 1968;
 				this.match(PythonParser.STAR);
-				{
 				this.state = 1969;
-				this.star_target();
-				}
+				this.target_with_star_atom();
 				}
 				break;
 			case 4:
@@ -11687,7 +11685,7 @@ export default class PythonParser extends Parser {
 	358,179,0,1959,1957,1,0,0,0,1960,1961,1,0,0,0,1961,1959,1,0,0,0,1961,1962,
 	1,0,0,0,1962,1964,1,0,0,0,1963,1965,5,15,0,0,1964,1963,1,0,0,0,1964,1965,
 	1,0,0,0,1965,1967,1,0,0,0,1966,1956,1,0,0,0,1966,1959,1,0,0,0,1967,357,
-	1,0,0,0,1968,1969,5,19,0,0,1969,1972,3,358,179,0,1970,1972,3,360,180,0,
+	1,0,0,0,1968,1969,5,19,0,0,1969,1972,3,360,180,0,1970,1972,3,360,180,0,
 	1971,1968,1,0,0,0,1971,1970,1,0,0,0,1972,359,1,0,0,0,1973,1980,3,368,184,
 	0,1974,1975,5,13,0,0,1975,1981,3,380,190,0,1976,1977,5,8,0,0,1977,1978,
 	3,268,134,0,1978,1979,5,11,0,0,1979,1981,1,0,0,0,1980,1974,1,0,0,0,1980,
@@ -19142,9 +19140,6 @@ export class Star_targetContext extends ParserRuleContext {
 	}
 	public STAR(): TerminalNode {
 		return this.getToken(PythonParser.STAR, 0);
-	}
-	public star_target(): Star_targetContext {
-		return this.getTypedRuleContext(Star_targetContext, 0) as Star_targetContext;
 	}
 	public target_with_star_atom(): Target_with_star_atomContext {
 		return this.getTypedRuleContext(Target_with_star_atomContext, 0) as Target_with_star_atomContext;
