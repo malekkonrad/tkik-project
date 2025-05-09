@@ -196,7 +196,7 @@ import PythonParserVisitor from "./PythonParserVisitor";
 import PythonLexer from "./PythonLexer";
 import polyfills, { globalDefinitions } from "./LuaPolyfills";
 
-const indent = (txt: string, chars: string = '  ') => txt.split('\n').map(x => chars + x).join('\n')
+const indent = (txt: string, chars: string = '    ') => txt.split('\n').map(x => chars + x).join('\n')
 type LoopData = {
     hasElse: boolean,
     identifier: number
@@ -1118,7 +1118,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         if (lit instanceof TerminalNode) {
             switch (lit.symbol.type) {
                 case PythonLexer.NONE:
-                    return 'TODO' // TODO: Implement none
+                    return 'None'
                 case PythonLexer.TRUE:
                     return 'true'
                 case PythonLexer.FALSE:
@@ -1141,7 +1141,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         if (lit instanceof TerminalNode) {
             switch (lit.symbol.type) {
                 case PythonLexer.NONE:
-                    return 'TODO' // TODO: Implement none
+                    return 'None'
                 case PythonLexer.TRUE:
                     return 'true'
                 case PythonLexer.FALSE:
@@ -1814,7 +1814,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         if (t instanceof TerminalNode) {
             switch (t.symbol.type) {
                 case PythonLexer.NONE:
-                    return 'TODO' // TODO: Implement none
+                    return 'None'
                 case PythonLexer.TRUE:
                     return 'true'
                 case PythonLexer.FALSE:

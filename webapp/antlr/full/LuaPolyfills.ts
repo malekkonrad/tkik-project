@@ -1,7 +1,7 @@
 const polyfills = `-- Lua Polyfills
 local org_print = print
 
-local getOrErr = function (name, str_name, isLocal)
+local getOrErr = function (name, str_name, isLocal) -- DEVIATION: Unfortunately that's not the literal translation. Python has many error types here basing on the context but those are the base ones
     if name == nil then
         if isLocal then
             error("NameError: name '" .. str_name .. "' is not defined")
@@ -12,10 +12,7 @@ local getOrErr = function (name, str_name, isLocal)
     return name
 end
 
-function shortHandIf(a, b, c)
-    if a then return b end
-    return c
-end
+function shortHandIf(a, b, c) if a then return b end return end
 
 function tableMerge(...)
     local target = {}
@@ -158,7 +155,8 @@ end, { { Default = '', Name = "prompt" } }, false, false)
 export const globalDefinitions: { [Name: string]: string } = {
     ["print"]: 'print',
     ["len"]: 'len',
-    ["input"]: 'input'
+    ["input"]: 'input',
+    ["None"]: 'None'
 }
 
 export default polyfills
