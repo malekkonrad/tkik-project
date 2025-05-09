@@ -1792,7 +1792,9 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | named_expression;
     */
     visitSlice(ctx: SliceContext): string {
-        return 'TODO slice' // TODO
+        const named_expr = ctx.named_expression()
+        if (named_expr != null) return this.visit(named_expr)
+        const expression_list = ctx.expression_list()
     }
     /*
     atom
@@ -1820,7 +1822,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
                 case PythonLexer.NUMBER:
                     return t.getText() // TODO: Check number lexing if any adjustments have to be made
                 case PythonLexer.ELLIPSIS:
-                    return 'TODO' // TODO: Implement ellipsis (...)
+                    return 'Ellipsis'
             }
         }
 
@@ -1835,11 +1837,6 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             return `getOrErr(${definition}, '${txtName}', ${(cscope.scopeType == ScopeType.GLOBAL) ? 'false' : 'true'})`
         }
 
-        /* TODO:
-        | (tuple | group | genexp)
-        | (list | listcomp)
-        | (dict | set | dictcomp | setcomp)
-        */
         return this.visit(ctx.getChild(0))
     }
     /*
@@ -1847,7 +1844,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : '(' (yield_expr | named_expression) ')';
     */
     visitGroup(ctx: GroupContext): string {
-        return 'TODO group' // TODO
+        return `(${this.visit(ctx.getChild(1))})`
     }
     // ----------------
     // Lambda functions
@@ -2476,10 +2473,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     }
 }
 
-// Usunac break top-level
-// Obsluga bledow semantycznych
-// (Odwolanie do nieistniejacych elementów?)
-// should error when coming across non-existing variable
+// add error handling (nodes are apparently not guaranteed)
 
 /*
 

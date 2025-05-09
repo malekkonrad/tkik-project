@@ -157,7 +157,7 @@ setmetatable(list, {
         local inst = {
             _data = t
         }
-        return setmetatable(inst, { -- TODO: Add the methods
+        local methods = { -- TODO: Add the methods
             append = function (v) table.insert(inst._data, v) end;
             insert = function (i, v) table.insert(inst._data, i, v) end;
             clear = function () inst._data = {} end;
@@ -167,6 +167,11 @@ setmetatable(list, {
             __len__ = function () return #inst._data end;
             __bool__ = function () return true end;
             __getitem__ = function (i) return inst._data[i] end;
+        }
+        return setmetatable(inst, {
+            __index = function ()
+                return methods[index]
+            end
         })
     end
 })
@@ -177,9 +182,14 @@ setmetatable(tuple, {
         local inst = {
             _data = t
         }
-        return setmetatable(inst, { -- TODO: Add the methods
+        local methods = { -- TODO: Add the methods
             __len__ = function () return #inst._data end;
             __bool__ = function () return true end;
+        }
+        return setmetatable(inst, {
+            __index = function ()
+                return methods[index]
+            end
         })
     end
 })
@@ -190,9 +200,14 @@ setmetatable(set, {
         local inst = {
             _data = {}
         }
-        for _, v in ipairs(t) do inst._data[v] = true end
-        return setmetatable(inst, { -- TODO: Add the methods
+        local methods = { -- TODO: Add the methods
             __bool__ = function () return true end;
+        }
+        for _, v in ipairs(t) do inst._data[v] = true end
+        return setmetatable(inst, {
+            __index = function ()
+                return methods[index]
+            end
         })
     end
 })
@@ -203,10 +218,15 @@ setmetatable(dict, {
         local inst = {
             _data = t
         }
-        return setmetatable(inst, { -- TODO: Add the methods
+        local methods = { -- TODO: Add the methods
             __bool__ = function () return true end;
             __getitem__ = function (i) return inst._data[i] end;
-            __setitem__ = function (i, v) return inst._data[i] = v end;
+            __setitem__ = function (i, v) inst._data[i] = v end;
+        }
+        return setmetatable(inst, {
+            __index = function ()
+                return methods[index]
+            end
         })
     end
 })
@@ -214,6 +234,10 @@ setmetatable(dict, {
 local None = {}
 setmetatable(None, { -- TODO: Add the methods
     __bool__ = function () return false end
+})
+
+local Ellipsis = {}
+setmetatable(Ellipsis, { -- TODO: Add the methods
 })
 `
 
