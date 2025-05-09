@@ -143,11 +143,7 @@ local print = defFunction(function (objects, sep, endl)
 end, { { Default = ' ', Name = "sep", OnlyNamed = true }, { Default = '\\n', Name = "end", OnlyNamed = true } }, true, false)
 
 local len = defFunction(function (s)
-    local m = getmetatable(s)
-    if m.__len__ ~= nil then
-        return m.__len__
-    end
-    -- #table shouldn't technically be required
+    return #s
 end, { { Name = "s" } }, false, false)
 
 local input = defFunction(function (prompt)
@@ -175,7 +171,8 @@ setmetatable(list, {
         return setmetatable(inst, {
             __index = function (_, i)
                 return methods[i]
-            end
+            end,
+            __len = function (v) return v.__len__ end
         })
     end
 })
@@ -194,7 +191,8 @@ setmetatable(tuple, {
         return setmetatable(inst, {
             __index = function (_, i)
                 return methods[i]
-            end
+            end,
+            __len = function (v) return v.__len__ end
         })
     end
 })
