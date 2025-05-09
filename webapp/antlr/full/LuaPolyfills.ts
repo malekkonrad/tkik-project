@@ -166,11 +166,11 @@ setmetatable(list, {
             end,
             __len__ = function () return #inst._data end;
             __bool__ = function () return true end;
-            __getitem__ = function (i) return inst._data[i] end;
+            __getitem__ = function (i) return inst._data[i - 1] end;
         }
         return setmetatable(inst, {
-            __index = function ()
-                return methods[index]
+            __index = function (_, i)
+                return methods[i]
             end
         })
     end
@@ -185,10 +185,11 @@ setmetatable(tuple, {
         local methods = { -- TODO: Add the methods
             __len__ = function () return #inst._data end;
             __bool__ = function () return true end;
+            __getitem__ = function (i) return inst._data[i + 1] end;
         }
         return setmetatable(inst, {
-            __index = function ()
-                return methods[index]
+            __index = function (_, i)
+                return methods[i]
             end
         })
     end
@@ -205,8 +206,8 @@ setmetatable(set, {
         }
         for _, v in ipairs(t) do inst._data[v] = true end
         return setmetatable(inst, {
-            __index = function ()
-                return methods[index]
+            __index = function (_, i)
+                return methods[i]
             end
         })
     end
@@ -224,8 +225,8 @@ setmetatable(dict, {
             __setitem__ = function (i, v) inst._data[i] = v end;
         }
         return setmetatable(inst, {
-            __index = function ()
-                return methods[index]
+            __index = function (_, i)
+                return methods[i]
             end
         })
     end
