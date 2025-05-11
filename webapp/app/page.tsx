@@ -47,7 +47,7 @@ export default function Home() {
   const [result, setResult] = React.useState<string>('')
   const [dTree, setDTree] = React.useState<ParserRuleContext | null>(null)
   const [tTree, setTTree] = React.useState<string | null>(null)
-  const [sampleName, setSampleName] = React.useState<string>('')
+  const [sampleName, setSampleName] = React.useState<string>('None')
   React.useEffect(() => {
     if (sampleName != '' && editorRef.current != null) {
       const sample = samples.find(x => x.name == sampleName)
@@ -139,7 +139,7 @@ export default function Home() {
                 value={sampleName}
                 onChange={(event: SelectChangeEvent) => setSampleName(event.target.value)}
               >
-                <MenuItem value=''>No sample</MenuItem>
+                <MenuItem value='None' key='None'>No sample</MenuItem>
                 {
                   samples.map(x => (<MenuItem value={x.name} key={x.name}>{x.name}</MenuItem>))
                 }
