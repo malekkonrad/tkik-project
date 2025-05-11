@@ -2077,7 +2077,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             stringText = stringText.replaceAll(/(?<!\\)\\([0-8]{1,3})/g, (_, v) => String.fromCharCode(parseInt(v, 8)))
             // \n{name} is unsupported // https://docs.python.org/3/reference/lexical_analysis.html
         } else {
-            stringText = stringText.replaceAll(/\\(?!['"])/g, '\\\\') // Parse the '\' to '\\' so that it's escaped (apparently without `'` and `"`")
+            stringText = stringText.replaceAll(/\\/g, '\\\\') // Parse the '\' to '\\' so that it's escaped
         }
         if (stringText.startsWith("'''") || stringText.startsWith('"""')) {
             // Goal here is to change `'''` to ' and then escape any not already escaped  `'`

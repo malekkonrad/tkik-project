@@ -1,38 +1,22 @@
 "use client";
 // import Image from "next/image";
-// import antlr4 from 'antlr4'
 
-import * as CryptoJS from 'crypto-js'
+import Editor from '@monaco-editor/react';
+import { editor } from 'monaco-editor';
+
+import * as CryptoJS from 'crypto-js';
 import * as React from 'react';
-import TextField from '@mui/material/TextField'
 import Select, { SelectChangeEvent } from '@mui/material/Select'
 import MenuItem from '@mui/material/MenuItem'
 
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-import { CharStream, CommonTokenStream } from 'antlr4';
-import FullPythonLexer from '../antlr/full/PythonLexer';
-import FullPythonParser from '../antlr/full/PythonParser';
-import OursPythonLexer from '../antlr/ours/MiniPythonLexer';
-import OursPythonParser from '../antlr/ours/MiniPythonParser';
-import LuaPythonVisitor from '../antlr/full/LuaPythonVisitor';
+import { CharStream, CommonTokenStream, ParserRuleContext } from 'antlr4';
 
-import samples from './samples'
-
-const lexers = {
-  'full': FullPythonLexer,
-  'ours': OursPythonLexer
-}
-
-const parsers = {
-  'full': FullPythonParser,
-  'ours': OursPythonParser
-}
-
-const visitors = {
-  'full': LuaPythonVisitor
-}
+import samples from '../antlr/samples'
+import compilers, { CompilerSet } from '../antlr/compilers'
+import TldrawSvg from '../antlr/TldrawSvg'
 
 const addURLParams = (url: string, params: { [Param: string]: string }) => {
   const u = new URL(url)
@@ -48,38 +32,48 @@ const addHeader = (src: string, res: string) => {
 }
 
 export default function Home() {
-  const [code, setCode] = React.useState('')
-  const [version, setVersion] = React.useState('full')
-  const [result, setResult] = React.useState('')
-  const [dTree, setDTree] = React.useState('')
-  const [sampleName, setSampleName] = React.useState('')
+  const editorRef = React.useRef<editor.IStandaloneCodeEditor>(null)
+
+  const [code, setCode] = React.useState<string>('')
+  const [version, setVersion] = React.useState<string>('full')
+  const [result, setResult] = React.useState<string>('')
+  const [dTree, setDTree] = React.useState<ParserRuleContext | null>(null)
+  const [sampleName, setSampleName] = React.useState<string>('')
   React.useEffect(() => {
-    if (sampleName != '') {
+    if (sampleName != '' && editorRef.current != null) {
       const sample = samples.find(x => x.name == sampleName)
-      if (sample != null) setCode(sample.src)
+      if (sample != null) editorRef.current?.setValue(sample.src)
     }
   }, [ sampleName ])
 
   React.useEffect(() => {
     try {
-      const chars = new CharStream(code); // replace this with a FileStream as required
-      const lexerClass = (lexers as any)[version] // eslint-disable-line
-      const parserClass = (parsers as any)[version] // eslint-disable-line
-      const visitorClass = (visitors as any)[version] // eslint-disable-line
-      const lexer = new lexerClass(chars);
-      const tokens = new CommonTokenStream(lexer);
-      const parser = new parserClass(tokens);
-      const tree = parser.program();
-      
-      setDTree(tree.toStringTree(parser.ruleNames))
+      const compilerData: CompilerSet = compilers[version]
+      if (compilerData == null) return setResult("-- No compiler found :(")
 
-      if (visitorClass != null) {
-        const luaVisitor = new visitorClass()
-        const res = luaVisitor.visit(tree)
-        setResult((res != null) ? addHeader(code, res) : '-- No result')
-      } else {
-        setResult("-- Can't parse this grammar")
-      }
+      const {lexer: lexerClass, parser: parserClass, visitor: visitorClass} = compilerData
+
+      const chars = new CharStream(code);
+      if (lexerClass == null) return setResult("-- No lexer available")
+      const lexer = new lexerClass(chars);
+      lexer.removeErrorListeners()
+      if (compilerData.lexerErrorListener != null) lexer.addErrorListener(new compilerData.lexerErrorListener())
+
+      const tokens = new CommonTokenStream(lexer);
+      if (parserClass == null) return setResult("-- No parser available")
+      const parser = new (parserClass as any)(tokens); // eslint-disable-line
+      parser.buildParseTrees = true
+      parser.removeErrorListeners()
+      if (compilerData.parserErrorListener != null) parser.addErrorListener(new compilerData.parserErrorListener())
+      
+      const tree = parser.program();
+      setDTree(tree)
+
+      if (visitorClass == null) return setResult("-- No visitor available")
+
+      const luaVisitor = new visitorClass()
+      const res = luaVisitor.visit(tree)
+      setResult((res != null) ? addHeader(code, res) : '-- No result')
     } catch (error: unknown) {
       if (error instanceof Error) {
         setResult(`-- Failed to parse :(\n--${error.message}`)
@@ -113,21 +107,26 @@ export default function Home() {
           setVersion(event.target.value)
         }}
       >
-        <MenuItem value='full'>Full Python</MenuItem>
-        <MenuItem value='ours'>Our Version</MenuItem>
+        {
+          Object.entries(compilers).map(([key, value]) => (<MenuItem key={key} value={key}>{value.name}</MenuItem>))
+        }
       </Select><br />
       <Select
         value={sampleName}
-        onChange={(event: SelectChangeEvent) => {
-          setSampleName(event.target.value)
-        }}
+        onChange={(event: SelectChangeEvent) => setSampleName(event.target.value)}
       >
         <MenuItem value=''>No sample</MenuItem>
         {
           samples.map(x => (<MenuItem value={x.name} key={x.name}>{x.name}</MenuItem>))
         }
       </Select><br />
-      <TextField variant='outlined' multiline value={code} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCode(e.target.value)} />
+      <Editor
+        height="90vh"
+        defaultLanguage="python"
+        defaultValue="// Put your code here"
+        onChange={value => setCode(value ?? '')}
+        onMount={(editor) => editorRef.current = editor}
+      />;
       <SyntaxHighlighter
         language="lua"
         style={dark}
@@ -135,7 +134,7 @@ export default function Home() {
       >
         {result}
       </SyntaxHighlighter>
-      <p>{dTree}</p>
+      <TldrawSvg parseTree={dTree} />
       {/* Docs: https://onecompiler.com/apis/embed-editor */}
       <iframe
         frameBorder="0"

@@ -130,9 +130,9 @@ local defFunction = function (func, argsData, has_largs, has_kwargs)
 end
 
 -- Basic functions
-local rawCall = defFunction(function (objects, sep, endl)
-    return objects[1](table.unpack(objects, 2, objects.n))
-end, {}, true, false)
+local rawCall = defFunction(function (objects, func) return func(table.unpack(objects, 1, objects.n)) end, { { Name = "func" } }, true, false)
+
+local custCall = function (func, ...) return func(table.pack(...), {}) end
 
 local print = defFunction(function (objects, sep, endl)
     local res = {}
@@ -167,11 +167,15 @@ setmetatable(list, {
             __len__ = function () return #inst._data end;
             __bool__ = function () return true end;
             __getitem__ = function (i) return inst._data[i - 1] end;
+            __contains__ = function (i)
+                for _, v in ipairs(inst._data) do
+                    if i == v then return true end
+                end
+                return false
+            end;
         }
         return setmetatable(inst, {
-            __index = function (_, i)
-                return methods[i]
-            end,
+            __index = function (_, i) return methods[i] end,
             __len = function (v) return v.__len__ end
         })
     end
@@ -179,7 +183,7 @@ setmetatable(list, {
 
 local tuple = {}
 setmetatable(tuple, {
-    _call = function (_, t)
+    __call = function (_, t)
         local inst = {
             _data = t
         }
@@ -189,9 +193,7 @@ setmetatable(tuple, {
             __getitem__ = function (i) return inst._data[i + 1] end;
         }
         return setmetatable(inst, {
-            __index = function (_, i)
-                return methods[i]
-            end,
+            __index = function (_, i) return methods[i] end,
             __len = function (v) return v.__len__ end
         })
     end
@@ -199,25 +201,24 @@ setmetatable(tuple, {
 
 local set = {}
 setmetatable(set, {
-    _call = function (_, t)
+    __call = function (_, t)
         local inst = {
             _data = {}
         }
         local methods = { -- TODO: Add the methods
             __bool__ = function () return true end;
+            __contains__ = function (i) return inst._data[i] == true end;
         }
         for _, v in ipairs(t) do inst._data[v] = true end
         return setmetatable(inst, {
-            __index = function (_, i)
-                return methods[i]
-            end
+            __index = function (_, i) return methods[i] end
         })
     end
 })
 
 local dict = {}
 setmetatable(dict, {
-    _call = function (_, t)
+    __call = function (_, t)
         local inst = {
             _data = t
         }
@@ -225,19 +226,33 @@ setmetatable(dict, {
             __bool__ = function () return true end;
             __getitem__ = function (i) return inst._data[i] end;
             __setitem__ = function (i, v) inst._data[i] = v end;
+            __contains__ = function (i) return inst._data[i] ~= nil end;
         }
         return setmetatable(inst, {
-            __index = function (_, i)
-                return methods[i]
-            end
+            __index = function (_, i) return methods[i] end
         })
     end
 })
 
-local None = {}
-setmetatable(None, { -- TODO: Add the methods
-    __bool__ = function () return false end
+local string = {}
+setmetatable(string, {
+    __call = function (_, s)
+        local inst = { _data = s }
+        local methods = { -- TODO: Add the methods
+            __contains__ = function (i) return string.find(inst._data, i, 1, true) end;
+        }
+    end
 })
+
+local None = {}
+do
+    local methods = { -- TODO: Add the methods
+        __bool__ = function () return false end
+    }
+    setmetatable(None, {
+        __index = function (_, i) return methods[i] end
+    })
+end
 
 local Ellipsis = {}
 setmetatable(Ellipsis, { -- TODO: Add the methods

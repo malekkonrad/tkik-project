@@ -25,6 +25,64 @@ sporty("boks", "narty", ulubiony="football")
 `
   },
   {
+    name: "Pythonese Brainrot",
+    src: `
+try:
+    x ,= (f"a" f"b",)
+except:
+    print("Niet")
+print(r'''\'''Yes''')
+print(u"Maybe")
+
+def test(f):
+    def wrap(*a): print(":D"); f(*a)
+    f(0)
+    return wrap
+
+@(another := test,)[0]
+def omg(a, /, *, b = None):
+  print(rf'\"\n {a=!a} {a=:{a}.{a}f}')
+
+@another
+class abc(str):
+  pr = 12
+  def __init__(self, eee):
+      print(eee)
+
+omg(1)
+a = abc(5)
+
+def a():
+    x = 5
+    y = 4
+    def b():
+        y = 3
+        def c():
+            nonlocal x
+            nonlocal y
+            print(x, y)
+        c()
+    b()
+a()
+
+# Easy one
+def right(eeee):
+    x = yield 5
+    print(eeee, x)
+    return 8
+
+u = right(1) # ?
+print(u)
+try:
+    u.send(2)
+    print(":)")
+except:
+    ...
+u.send(None)
+u.send(6) 
+`
+  },
+  {
     name: "Tic Tac Toe",
     src: `
 # Pam Qian 2016 Fall CS 112 Python Midterm Project II
