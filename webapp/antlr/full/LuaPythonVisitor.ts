@@ -453,11 +453,11 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             const yield_expr = ctx.yield_expr()
             
             const star_targets_list = ctx.star_targets_list()
-            let result = `local ass_res = ${this.visit(star_exprs ?? yield_expr)}`
+            let result = `local ass_res = ${this.visit(star_exprs ?? yield_expr)}\n`
             for (const star_targets of star_targets_list) {
-                result += indent(`do\n${this.visit(star_targets)}\nend`)
+                result += indent(`do\n${this.visit(star_targets)}\nend\n`)
             }
-            return `do\n${indent(result)}\nend`
+            return `do\n${indent(result)}end`
         }
         const augassign = ctx.augassign()
         if (augassign != null) { // single_target augassign (yield_expr | star_expressions)
