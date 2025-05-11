@@ -215,17 +215,25 @@ class ScopeData {
     public scopeType;
     public parentScope: ScopeData | null;
     public usedDefinitions: Set<string> = new Set<string>();
+
     constructor (scopeId: number, scopeType: ScopeType, parentScope: ScopeData | null) {
         this.scopeId = scopeId
         this.scopeType = scopeType;
         this.parentScope = parentScope;
     }
 
-    getScopeDefinitions() {
+    createScopeDefinitions() {
         const definition_list = []
         for (const definition in this.definitions) definition_list.push(this.definitions[definition])
         if (definition_list.length == 0) return ''
         return `local ${definition_list.join(', ')}`
+    }
+
+    createExportDefinitions() {
+        const exportDefinition_list = []
+        // Only export global definitions
+        for (const definition in this.definitions) exportDefinition_list.push(`${definition} = ${this.definitions[definition]}`)
+        return `return {\n${indent(exportDefinition_list.join(',\n'))}\n}`
     }
 
     getDefinition(name: string): (string | undefined) {
@@ -296,8 +304,9 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             let result = polyfills
             result += "\n-- Program content\n"
             const program = this.visit(statements)
-            result += this.scopeStack.at(-1)?.getScopeDefinitions() + '\n' // Inject scope definitions
-            result += program
+            result += this.scopeStack.at(-1)?.createScopeDefinitions() + '\n' // Inject scope definitions
+            result += program + '\n\n'
+            result += this.scopeStack.at(-1)?.createExportDefinitions()
             return result
         }
         return ''
@@ -401,7 +410,13 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
                 y: str = "hello"
             */
             // Ignore the expressions as the types are not supported
-            return `${this.visit(name)} = ${this.visit(ctx.annotated_rhs())}`
+            const currentScope = this.scopeStack.at(-1)
+            if (currentScope == null) throw new Error("Scope not found")
+
+            const definition = currentScope.createDefinitionIfNotExists(this.visit(ctx.name()))
+            const ann_rhs = ctx.annotated_rhs()
+            if (ann_rhs == null) return ''
+            return `${definition} = ${this.visit(ann_rhs)}`
         }
         const augassign = ctx.augassign()
         if (augassign != null) { // single_target augassign (yield_expr | star_expressions)
@@ -523,7 +538,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             if (currentScope.hiddenDefinitions[txtName] != null && currentScope.hiddenDefinitions[txtName] != definition) {
                 throw new Error(`SyntaxError: name '${txtName}' is nonlocal and global`)
             }
-            if (currentScope.getDefinition(txtName)) {
+            if (currentScope.getDefinition(txtName) && currentScope != globalScope) {
                 throw new Error(`SyntaxError: name '${txtName}' is assigned to before global declaration`)
             }
             // Add hidden definition as it should not be redefined within current scope (unless we are in the global scope)
@@ -787,7 +802,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             inner += 'end)'
             inner = indent(inner)
         }*/
-        result += nscope.getScopeDefinitions()
+        result += nscope.createScopeDefinitions()
         result += inner
         result += `\nend, { ${lua_rest_args.join(', ')} }, ` // argsData
         result += `${(args_name != null) ? 'true' : 'false'}, `
@@ -1596,6 +1611,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             }
             throw new Error("Unknown comparison handling")
         }
+        return result
     }
     /*
     compare_op_bitwise_or_pair
@@ -1947,7 +1963,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         let result = `defFunction(\n`
         result += `function (${lua_func_params.map(x => nscope.createDefinitionIfNotExists(x, true)).join(', ')})\n`
         const inner = this.visit(ctx.expression())
-        result += nscope.getScopeDefinitions()
+        result += nscope.createScopeDefinitions()
         result += inner
         result += `\nend, { ${lua_rest_args.join(', ')} }, ` // argsData
         result += `${(args_name != null) ? 'true' : 'false'}, `
