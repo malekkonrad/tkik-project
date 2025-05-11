@@ -129,6 +129,22 @@ local defFunction = function (func, argsData, has_largs, has_kwargs)
     end
 end
 
+local cunpack = function (left, right, ...) -- if right ~= nil, then we expect there is *args between left & right (and right can be eventually equal to 0)
+    local rargs = {}
+    local pargs = table.pack(...)
+    local totalcount = left
+    for i = 1, left, 1 do table.insert(rargs, table.remove(pargs, 1)) end
+    if right ~= nil then
+        totalcount = totalcount + 1 + right
+        table.insert(rargs, pargs)
+        for i = right, 1, -1 do table.insert(rargs, table.remove(pargs, #pargs - i + 1)) end
+    end
+    return table.unpack(rargs, 1, totalcount)
+end
+
+local in_operator = function (a, b) return a.__contains__(b) end
+local is_operator = function (a, b) error("TODO") end
+
 -- Basic functions
 local rawCall = defFunction(function (objects, func) return func(table.unpack(objects, 1, objects.n)) end, { { Name = "func" } }, true, false)
 

@@ -430,7 +430,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
                 case PythonLexer.SLASHEQUAL:
                     return `${target} = ${target} / ${this.visit(star_exprs ?? yield_expr)}`
                 case PythonLexer.PERCENTEQUAL:
-                    return `${target} = ${target} % ${this.visit(star_exprs ?? yield_expr)}`
+                    return `${target} = math.fmod(${target}, ${this.visit(star_exprs ?? yield_expr)})`
                 case PythonLexer.AMPEREQUAL:
                     return `${target} = bit.band(${target}, ${this.visit(star_exprs ?? yield_expr)})`
                 case PythonLexer.VBAREQUAL:
@@ -689,8 +689,8 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     /*
     decorators: ('@' named_expression NEWLINE )+;
     */
-    visitDecorators(ctx: DecoratorsContext): string {
-        return 'TODO decorators' // TODO
+    visitDecorators(ctx: DecoratorsContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("decorators are parsed within class / function defintions")
     }
     // -----------------
     // Class definitions
@@ -727,8 +727,22 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     */
     visitFunction_def(ctx: Function_defContext): string {
         const fdr = ctx.function_def_raw()
-        // TODO: Implement decorators?
-        return this.visit(fdr)
+        let result = this.visit(fdr)
+        const decorators = ctx.decorators()
+        if (decorators != null) {
+            const named_expression_list = decorators.named_expression_list()
+            for (let i = named_expression_list.length - 1; i >= 0; --i) { // Use in reverse order
+                result = `custCall(${this.visit}, ${fdr})`
+            }
+        }
+        
+        const cscope = this.scopeStack.at(-1)
+        if (cscope == null) throw new Error("Stack not found")
+
+        const funcName = ctx.function_def_raw().name()
+        const txtName = this.visit(funcName)
+        const definition = cscope.createDefinitionIfNotExists(txtName)
+        return `${definition} = ${result}`
     }
     /*
     function_def_raw
@@ -760,16 +774,14 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         const cscope = this.scopeStack.at(-1)
         if (cscope == null) throw new Error("Stack not found")
 
-        const txtName = this.visit(ctx.name())
-        const definition = cscope.createDefinitionIfNotExists(txtName)
-
+        // Assignment to variable is done within function_def
         const nscope = new ScopeData(this.lastScopeIdentifier++, ScopeType.FUNCTION, cscope)
         this.scopeStack.push(nscope)
         // TODO: async
-        let result = `${definition} = defFunction(`
+        let result = `defFunction(`
         result += `function (${lua_func_params.map(x => nscope.createDefinitionIfNotExists(x, true)).join(', ')})\n`
         let inner = ''
-        //if (isAsync) inner += 'coroutine.create(function()'
+        //if (isAsync) inner += 'coroutine.create(function()' // TODO
         inner += this.visit(ctx.block())
         /*if (isAsync) {
             inner += 'end)'
@@ -1529,9 +1541,61 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : bitwise_or compare_op_bitwise_or_pair*;
     */
     visitComparison(ctx: ComparisonContext): string {
-        const compopbitorpair = ctx.compare_op_bitwise_or_pair_list()
-        if (compopbitorpair.length == 0) return this.visit(ctx.bitwise_or())
-        return `${this.visit(ctx.bitwise_or())} ${compopbitorpair.map(x => this.visit(x)).join(' ')}`
+        let result = this.visit(ctx.bitwise_or())
+
+        for (const cop_bop of ctx.compare_op_bitwise_or_pair_list()) {
+            const eq_bor = cop_bop.eq_bitwise_or()
+            if (eq_bor != null) {
+                result += `(${result} == ${this.visit(eq_bor.bitwise_or())})`
+                continue
+            }
+            const noteq_bor = cop_bop.noteq_bitwise_or()
+            if (noteq_bor != null) {
+                result += `(${result} ~= ${this.visit(noteq_bor.bitwise_or())})`
+                continue
+            }
+            const lte_bor = cop_bop.lte_bitwise_or()
+            if (lte_bor != null) {
+                result += `(${result} <= ${this.visit(lte_bor.bitwise_or())})`
+                continue
+            }
+            const lt_bor = cop_bop.lt_bitwise_or()
+            if (lt_bor != null) {
+                result += `(${result} < ${this.visit(lt_bor.bitwise_or())})`
+                continue
+            }
+            const gte_bor = cop_bop.gte_bitwise_or()
+            if (gte_bor != null) {
+                result += `(${result} >= ${this.visit(gte_bor.bitwise_or())})`
+                continue
+            }
+            const gt_bor = cop_bop.gt_bitwise_or()
+            if (gt_bor != null) {
+                result += `(${result} > ${this.visit(gt_bor.bitwise_or())})`
+                continue
+            }
+            const notin_bor = cop_bop.notin_bitwise_or()
+            if (notin_bor != null) {
+                result += `not in_operator(${result}, ${this.visit(notin_bor.bitwise_or())})`
+                continue
+            }
+            const in_bor = cop_bop.in_bitwise_or()
+            if (notin_bor != null) {
+                result += `in_operator(${result}, ${this.visit(in_bor.bitwise_or())})`
+                continue
+            }
+            const notis_bor = cop_bop.isnot_bitwise_or()
+            if (notis_bor != null) {
+                result += `not is_operator(${result}, ${this.visit(notis_bor.bitwise_or())})`
+                continue
+            }
+            const is_bor = cop_bop.is_bitwise_or()
+            if (is_bor != null) {
+                result += `is_operator(${result}, ${this.visit(is_bor.bitwise_or())})`
+                continue
+            }
+            throw new Error("Unknown comparison handling")
+        }
     }
     /*
     compare_op_bitwise_or_pair
@@ -1546,69 +1610,69 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | isnot_bitwise_or
     | is_bitwise_or;
     */
-    visitCompare_op_bitwise_or_pair(ctx: Compare_op_bitwise_or_pairContext): string {
-        return this.visit(ctx.getChild(0))
+    visitCompare_op_bitwise_or_pair(ctx: Compare_op_bitwise_or_pairContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("compare_op_bitwise_or_pair is parsed within comparison")
     }
     /*
     eq_bitwise_or: '==' bitwise_or;
     */
-    visitEq_bitwise_or(ctx: Eq_bitwise_orContext): string {
-        return `== ${this.visit(ctx.bitwise_or())}`
+    visitEq_bitwise_or(ctx: Eq_bitwise_orContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("eq_bitwise_or is parsed within comparison")
     }
     /*
     noteq_bitwise_or
     : ('!=' ) bitwise_or;
     */
-    visitNoteq_bitwise_or(ctx: Noteq_bitwise_orContext): string {
-        return `~= ${this.visit(ctx.bitwise_or())}`
+    visitNoteq_bitwise_or(ctx: Noteq_bitwise_orContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("noteq_bitwise_or is parsed within comparison")
     }
     /*
     lte_bitwise_or: '<=' bitwise_or;
     */
-    visitLte_bitwise_or(ctx: Lte_bitwise_orContext): string {
-        return `<= ${this.visit(ctx.bitwise_or())}`
+    visitLte_bitwise_or(ctx: Lte_bitwise_orContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("lte_bitwise_or is parsed within comparison")
     }
     /*
     lt_bitwise_or: '<' bitwise_or;
     */
-    visitLt_bitwise_or(ctx: Lt_bitwise_orContext): string {
-        return `< ${this.visit(ctx.bitwise_or())}`
+    visitLt_bitwise_or(ctx: Lt_bitwise_orContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("lt_bitwise_or is parsed within comparison")
     }
     /*
     gte_bitwise_or: '>=' bitwise_or;
     */
-    visitGte_bitwise_or(ctx: Gte_bitwise_orContext): string {
-        return `>= ${this.visit(ctx.bitwise_or())}`
+    visitGte_bitwise_or(ctx: Gte_bitwise_orContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("gte_bitwise_or is parsed within comparison")
     }
     /*
     gt_bitwise_or: '>' bitwise_or;
     */
-    visitGt_bitwise_or(ctx: Gt_bitwise_orContext): string {
-        return `> ${this.visit(ctx.bitwise_or())}`
+    visitGt_bitwise_or(ctx: Gt_bitwise_orContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("gt_bitwise_or is parsed within comparison")
     }
     /*
     notin_bitwise_or: 'not' 'in' bitwise_or;
     */
-    visitNotin_bitwise_or(ctx: Notin_bitwise_orContext): string {
-        return 'TODO notin_bitwise_or' // TODO
+    visitNotin_bitwise_or(ctx: Notin_bitwise_orContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("notin_bitwise_or is parsed within comparison")
     }
     /*
     in_bitwise_or: 'in' bitwise_or;
     */
-    visitIn_bitwise_or(ctx: In_bitwise_orContext): string {
-        return 'TODO in_bitwise_or' // TODO
+    visitIn_bitwise_or(ctx: In_bitwise_orContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("in_bitwise_or is parsed within comparison")
     }
     /*
     isnot_bitwise_or: 'is' 'not' bitwise_or;
     */
-    visitIsnot_bitwise_or(ctx: Isnot_bitwise_orContext): string {
-        return 'TODO isnot_bitwise_or' // TODO
+    visitIsnot_bitwise_or(ctx: Isnot_bitwise_orContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("isnot_bitwise_or is parsed within comparison")
     }
     /*
     is_bitwise_or: 'is' bitwise_or;
     */
-    visitIs_bitwise_or(ctx: Is_bitwise_orContext): string {
-        return 'TODO is_bitwise_or' // TODO
+    visitIs_bitwise_or(ctx: Is_bitwise_orContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("is_bitwise_or is parsed within comparison")
     }
     // -----------------
     // Bitwise operators
@@ -1705,7 +1769,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
                 case PythonLexer.DOUBLESLASH:
                     return `${this.visit(term)} // ${this.visit(factor)}` // Lua 5.3+
                 case PythonLexer.PERCENT:
-                    return `${this.visit(term)} % ${this.visit(factor)}`
+                    return `math.fmod(${this.visit(term)}, ${this.visit(factor)})`
                 case PythonLexer.AT:
                     throw new Error("@ operator is not supported in Lua") // TODO: Implement using classes
             }
