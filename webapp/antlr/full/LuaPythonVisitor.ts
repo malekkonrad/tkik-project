@@ -438,6 +438,27 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             if (ann_rhs == null) return ''
             return `${this.visit(single_subscript_attribute_target)} = ${this.visit(ann_rhs)}`
         }
+        const star_targets_list = ctx.star_targets_list()
+        if (star_targets_list != null && star_targets_list.length > 0) { // (star_targets '=' )+ (yield_expr | star_expressions)
+            /* eg.
+                x = y = 5
+                a, *b = [1, 2, 3, 4]
+                x = (yield)
+                // NOTE: There can't be two *args but `*a, b` is allowed.
+            */
+            const star_exprs = ctx.star_expressions()
+            if (star_exprs != null && star_exprs.getChildCount() == 1 && (star_exprs.getChild(0) as Star_expressionContext).bitwise_or() != null) {
+                throw new Error("SyntaxError: can't use starred expression here")
+            }
+            const yield_expr = ctx.yield_expr()
+            
+            const star_targets_list = ctx.star_targets_list()
+            let result = `local ass_res = ${this.visit(star_exprs ?? yield_expr)}`
+            for (const star_targets of star_targets_list) {
+                result += indent(`do\n${this.visit(star_targets)}\nend`)
+            }
+            return `do\n${indent(result)}\nend`
+        }
         const augassign = ctx.augassign()
         if (augassign != null) { // single_target augassign (yield_expr | star_expressions)
             /* eg.
@@ -2405,7 +2426,42 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : star_target (',' star_target )* ','?;
     */
     visitStar_targets(ctx: Star_targetsContext): string {
-        return 'TODO star_targets' // TODO
+        const UnpackHelper = new LuaPythonVisitorUnpackTargetHelper(this)
+        const unpackResult: UnpackComponent = UnpackHelper.visit(ctx)
+        if ('expr' in unpackResult) {
+            return `${unpackResult.expr} = ass_res`
+        } else { // Need to begin unpacking
+            type Star_targetData = {
+                data: PackData,
+                src: string
+            }
+            const toHandle: Star_targetData[] = [{ data: unpackResult, src: 'ass_res' }]
+            const result = []
+            let lastTempI = 0
+            while (toHandle.length > 0) {
+                const cData: Star_targetData | undefined = toHandle.shift()
+                if (cData != null) {
+                    const { data: cur, src } = cData
+                    if (cur.children != null) {
+                        if (cur.children.filter(x => x.packed == true).length > 1) throw new Error("SyntaxError: multiple starred expressions in assignment")
+                        const starexprIndex = cur.children.findIndex(x => x.packed)
+                        const symbols: string[] = []
+                        for (const child of cur.children) {
+                            if ('children' in child) { // Need to create temporary symbol
+                                const defSymbol = `st_${lastTempI++}`
+                                result.push(`local ${defSymbol}`)
+                                symbols.push(defSymbol)
+                                toHandle.push({ data: child, src: defSymbol })
+                            } else if ('expr' in child) {
+                                symbols.push(child.expr)
+                            }
+                        }
+                        result.push(`${symbols.join(', ')} = cunpack(${starexprIndex ?? symbols.length}, ${(starexprIndex != null) ? (symbols.length - 1 - starexprIndex) : 'nil'}, table.unpack(${src}))`)
+                    }
+                }
+            }
+            return result.join('\n')
+        }
     }
     /*
     star_targets_list_seq: star_target (',' star_target)* ','?;
@@ -2591,10 +2647,9 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     }
 }
 
+// TODO
 // add error handling (nodes are apparently not guaranteed)
-
 /*
-
 // interactive: statement_newline;
 // eval: expressions NEWLINE* EOF;
 // func_type: '(' type_expressions? ')' '->' expression NEWLINE* EOF;

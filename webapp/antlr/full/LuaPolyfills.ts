@@ -142,7 +142,7 @@ local cunpack = function (left, right, ...) -- if right ~= nil, then we expect t
 end
 
 local in_operator = function (a, b) return a.__contains__(b) end
-local is_operator = function (a, b) error("TODO") end
+local is_operator = function (a, b) return a == b end
 
 local rawCall = defFunction(function (objects, func) return func(table.unpack(objects, 1, objects.n)) end, { { Name = "func" } }, true, false)
 local custCall = function (func, ...) return func(table.pack(...), {}) end
