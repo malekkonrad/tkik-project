@@ -113,7 +113,7 @@ export default function Home() {
   {/* ErrorListener https://tomassetti.me/antlr-mega-tutorial/#chapter19 */}
   return (
     <>
-      <Grid container spacing={2}>
+      <Grid container spacing={2} sx={{ margin: '10px' }}>
         <Grid size={6}>
           <Box>
             <FormControl>
