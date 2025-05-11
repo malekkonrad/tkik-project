@@ -205,13 +205,13 @@ export default function Home() {
                 >
                   {result}
                 </SyntaxHighlighter>
-              ) : {}
+              ) : null
             }
             {
-              (showDTree) ? (<TldrawSvg parseTree={dTree} />) : {}
+              (showDTree) ? (<TldrawSvg parseTree={dTree} />) : null
             }
             {
-              (showTTree) ? (<Typography>{tTree}</Typography>) : {}
+              (showTTree) ? (<Typography>{tTree}</Typography>) : null
             }
             {
               (showCompiler) ? (
@@ -241,7 +241,7 @@ export default function Home() {
                     width="100%"
                   />
                 </>
-              ) : {}
+              ) : null
             }
           </>
         ) : (
