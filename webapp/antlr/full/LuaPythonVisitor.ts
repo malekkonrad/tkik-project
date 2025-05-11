@@ -270,12 +270,12 @@ class ScopeData {
 }
 
 export default class LuaPythonVisitor extends ParseTreeVisitor<string> implements PythonParserVisitor<string> {
-    private scopeStack: ScopeData[];
-    private lastLoopIdentifier: number;
-    private lastScopeIdentifier: number;
+    public scopeStack: ScopeData[];
+    public lastLoopIdentifier: number;
+    public lastScopeIdentifier: number;
     private putBlock: boolean;
-    private loopContinueLabel: string = 'LOOP_CONT_';
-    private loopBreakLabel: string = 'LOOP_BRK_'
+    public loopContinueLabel: string = 'LOOP_CONT_';
+    public loopBreakLabel: string = 'LOOP_BRK_'
 
     constructor() {
         super()
@@ -2410,31 +2410,31 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     /*
     star_targets_list_seq: star_target (',' star_target)* ','?;
     */
-    visitStar_targets_list_seq(ctx: Star_targets_list_seqContext): string {
-        return 'TODO star_targets_list_seq' // TODO
+    visitStar_targets_list_seq(ctx: Star_targets_list_seqContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("star_targets_list_seq is parsed in dict data helper parser")
     }
     /*
     star_targets_tuple_seq
     : star_target (',' | (',' star_target )+ ','?);
     */
-    visitStar_targets_tuple_seq(ctx: Star_targets_tuple_seqContext): string {
-        return 'TODO star_targets_tuple_seq' // TODO
+    visitStar_targets_tuple_seq(ctx: Star_targets_tuple_seqContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("star_targets_tuple_seq is parsed in dict data helper parser")
     }
     /*
     star_target
     : '*' target_with_star_atom
     | target_with_star_atom;
     */
-    visitStar_target(ctx: Star_targetContext): string {
-        return 'TODO star_target' // TODO
+    visitStar_target(ctx: Star_targetContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("star_target is parsed in dict data helper parser")
     }
     /*
     target_with_star_atom
     : t_primary ('.' name | '[' slices ']')
     | star_atom;
     */
-    visitTarget_with_star_atom(ctx: Target_with_star_atomContext): string {
-        return 'TODO target_with_star_atom' // TODO
+    visitTarget_with_star_atom(ctx: Target_with_star_atomContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("target_with_star_atom is parsed in dict data helper parser")
     }
     /*
     star_atom
@@ -2443,8 +2443,8 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | '(' star_targets_tuple_seq? ')'
     | '[' star_targets_list_seq? ']';
     */
-    visitStar_atom(ctx: Star_atomContext): string {
-        return 'TODO star_atom' // TODO
+    visitStar_atom(ctx: Star_atomContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+        throw new Error("star_atom is parsed in dict data helper parser")
     }
     /*
     single_target
@@ -2713,7 +2713,123 @@ export class LuaPythonVisitorArgsHelper extends ParseTreeVisitor<Args> implement
     }
 }
 
-// TODO: This could potentially be done in a stack
+type PackEntryData = {
+    expr: string,
+    packed: boolean
+}
+
+type PackData = {
+    children?: UnpackComponent[],
+    packed: boolean
+}
+
+type UnpackComponent = PackData | PackEntryData
+
+export class LuaPythonVisitorUnpackTargetHelper extends ParseTreeVisitor<UnpackComponent> implements PythonParserVisitor<UnpackComponent> {
+    baseParser: LuaPythonVisitor
+
+    constructor (baseParser: LuaPythonVisitor) {
+        super();
+        this.baseParser = baseParser;
+    }
+
+    /*
+    star_targets
+    : star_target (',' star_target )* ','?;
+    */
+    visitStar_targets(ctx: Star_targetsContext): UnpackComponent {
+        const star_target_list = ctx.star_target_list()
+        if (ctx.getChildCount() > 1) { // If there is more than 1 value OR there is last ',', then it's a tuple to unpack
+            const pd: PackData = { children: star_target_list.map(x => this.visit(x)), packed: false }
+            return pd
+        }
+        const res = this.visit(star_target_list[0])
+        if (res.packed == true) throw new Error("SyntaxError: starred assignment target must be in a list or tuple")
+        return res
+    }
+    /*
+    star_targets_list_seq: star_target (',' star_target)* ','?;
+    */
+    visitStar_targets_list_seq(ctx: Star_targets_list_seqContext): UnpackComponent {
+        const pd: PackData = { children: ctx.star_target_list().map(x => this.visit(x)), packed: false }
+        return pd
+    }
+    /*
+    star_targets_tuple_seq
+    : star_target (',' | (',' star_target )+ ','?);
+    */
+    visitStar_targets_tuple_seq(ctx: Star_targets_tuple_seqContext): UnpackComponent {
+        const pd: PackData = { children: ctx.star_target_list().map(x => this.visit(x)), packed: false }
+        return pd
+    }
+    /*
+    star_target
+    : '*' target_with_star_atom
+    | target_with_star_atom;
+    */
+    visitStar_target(ctx: Star_targetContext): UnpackComponent {
+        const target_wsa = ctx.target_with_star_atom()
+        const uc = this.visit(target_wsa)
+        if (ctx.STAR() != null && uc != null) uc.packed = true
+        return uc
+    }
+    /*
+    target_with_star_atom
+    : t_primary ('.' name | '[' slices ']')
+    | star_atom;
+    */
+    visitTarget_with_star_atom(ctx: Target_with_star_atomContext): UnpackComponent {
+        const tprimary = ctx.t_primary()
+        if (tprimary != null) {
+            const name = ctx.name()
+            if (name != null) {
+                const ped: PackEntryData = {
+                    expr: `${this.baseParser.visit(tprimary)}.__getattr__(${this.baseParser.visit(name)})`,
+                    packed: false
+                }
+                return ped
+            }
+            const slices = ctx.slices()
+            if (slices != null) {
+                const ped: PackEntryData = {
+                    expr: `${this.baseParser.visit(tprimary)}.__getitem__(${this.baseParser.visit(slices)})`,
+                    packed: false
+                }
+                return ped
+            }
+        }
+        return this.visit(ctx.star_atom())
+    }
+    /*
+    star_atom
+    : name
+    | '(' target_with_star_atom ')'
+    | '(' star_targets_tuple_seq? ')'
+    | '[' star_targets_list_seq? ']';
+    */
+    visitStar_atom(ctx: Star_atomContext): UnpackComponent {
+        const name = ctx.name()
+        if (name != null) {
+            const cscope = this.baseParser.scopeStack.at(-1)
+            if (cscope == null) throw new Error("Stack not found")
+
+            const txtName = this.baseParser.visit(name)
+            const definition = cscope.createDefinitionIfNotExists(txtName)
+            const ped: PackEntryData = {
+                expr: definition,
+                packed: false
+            }
+            return ped
+        }
+        const target_wsa = ctx.target_with_star_atom()
+        if (target_wsa != null) return this.visit(target_wsa)
+        
+        const target_tuplelistseq = ctx.star_targets_list_seq() ?? ctx.star_targets_tuple_seq()
+        if (target_tuplelistseq != null) return this.visit(target_tuplelistseq)
+        const pd: PackData = { children: [], packed: false }
+        return pd
+    }
+}
 
 type DictEntryData = {
     key: string,
@@ -2724,7 +2840,7 @@ type DictData = (DictEntryData | string)
 export class LuaPythonVisitorDictHelper extends ParseTreeVisitor<DictData[]> implements PythonParserVisitor<DictData[]> {
     baseParser: LuaPythonVisitor
 
-    constructor(baseParser: LuaPythonVisitor) {
+    constructor (baseParser: LuaPythonVisitor) {
         super();
         this.baseParser = baseParser;
     }

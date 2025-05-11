@@ -116,7 +116,7 @@ export default function Home() {
       <Grid container spacing={2} sx={{ margin: '10px' }}>
         <Grid size={6}>
           <Box>
-            <FormControl>
+            <FormControl sx={{ marginRight: '5px' }}>
               <InputLabel id="version-label">Version</InputLabel>
               <Select
                 labelId="version-label"

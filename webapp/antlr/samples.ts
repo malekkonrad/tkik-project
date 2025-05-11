@@ -31,7 +31,7 @@ try:
     x ,= (f"a" f"b",)
 except:
     print("Niet")
-print(r'''\'''Yes''')
+print(r'''\\'''Yes''')
 print(u"Maybe")
 
 def test(f):
@@ -41,7 +41,7 @@ def test(f):
 
 @(another := test,)[0]
 def omg(a, /, *, b = None):
-  print(rf'\"\n {a=!a} {a=:{a}.{a}f}')
+  print(rf'\\"\\n {a=!a} {a=:{a}.{a}f}')
 
 @another
 class abc(str):
@@ -103,13 +103,13 @@ def main():
 def intro():
 # This function introduces the rules of the game Tic Tac Toe
     print("Hello! Welcome to Pam's Tic Tac Toe game!")
-    print("\n")
+    print("\\n")
     print("Rules: Player 1 and player 2, represented by X and O, take turns "
           "marking the spaces in a 3*3 grid. The player who succeeds in placing "
           "three of their marks in a horizontal, vertical, or diagonal row wins.")
-    print("\n")
+    print("\\n")
     input("Press enter to continue.")
-    print("\n")
+    print("\\n")
 
 
 
