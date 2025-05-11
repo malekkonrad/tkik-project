@@ -33,6 +33,22 @@ const addHeader = (src: string, res: string) => {
   return `-- PyToL\n-- Generated on: ${new Date().toISOString()}\n-- Source hash: ${srcHash}\n${res}`
 }
 
+const updateEditor = (document: Document, result: string) => {
+  const luaResultEditor = document.getElementById('lua-result-editor')
+    if (luaResultEditor != null && luaResultEditor instanceof HTMLIFrameElement && luaResultEditor.contentWindow != null) {
+    luaResultEditor.contentWindow.postMessage({
+      eventType: 'populateCode',
+      language: 'lua',
+      files: [
+        {
+          "name": "result.lua",
+          "content": result
+        }
+      ]
+    }, "*")
+  }
+}
+
 export default function Home() {
   const editorRef = React.useRef<editor.IStandaloneCodeEditor>(null)
 
@@ -92,21 +108,7 @@ export default function Home() {
     }
   }, [ code, version ])
 
-  React.useEffect(() => {
-    const luaResultEditor = document.getElementById('lua-result-editor')
-    if (luaResultEditor != null && luaResultEditor instanceof HTMLIFrameElement && luaResultEditor.contentWindow != null) {
-      luaResultEditor.contentWindow.postMessage({
-        eventType: 'populateCode',
-        language: 'lua',
-        files: [
-          {
-            "name": "result.lua",
-            "content": result
-          }
-        ]
-      }, "*")
-    }
-  }, [ result ])
+  React.useEffect(() => updateEditor(document, result), [ result, showCompiler ])
 
   {/* ErrorListener https://tomassetti.me/antlr-mega-tutorial/#chapter19 */}
   return (
@@ -253,6 +255,7 @@ export default function Home() {
                           })
                         }
                         width="100%"
+                        onLoad={() => updateEditor(document, result)}
                       />
                     </>
                   ) : null
