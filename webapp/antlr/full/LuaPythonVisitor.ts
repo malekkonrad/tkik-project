@@ -455,7 +455,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             const star_targets_list = ctx.star_targets_list()
             let result = `local ass_res = ${this.visit(star_exprs ?? yield_expr)}\n`
             for (const star_targets of star_targets_list) {
-                result += indent(`do\n${this.visit(star_targets)}\nend\n`)
+                result += `do\n${indent(this.visit(star_targets))}\nend\n`
             }
             return `do\n${indent(result)}end`
         }
@@ -2456,7 +2456,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
                                 symbols.push(child.expr)
                             }
                         }
-                        result.push(`${symbols.join(', ')} = cunpack(${starexprIndex ?? symbols.length}, ${(starexprIndex != null) ? (symbols.length - 1 - starexprIndex) : 'nil'}, table.unpack(${src}))`)
+                        result.push(`${symbols.join(', ')} = cunpack(${(starexprIndex != -1) ? starexprIndex : symbols.length}, ${(starexprIndex != -1) ? (symbols.length - 1 - starexprIndex) : 'nil'}, table.unpack(${src}))`)
                     }
                 }
             }
