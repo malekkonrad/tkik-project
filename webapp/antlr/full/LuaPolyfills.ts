@@ -1,12 +1,11 @@
 const polyfills = `-- Lua Polyfills
+-- CUSTOM FUNCTIONS
 local org_print = print
 
 local getOrErr = function (name, str_name, isLocal) -- DEVIATION: Unfortunately that's not the literal translation. Python has many error types here basing on the context but those are the base ones
     if name == nil then
-        if isLocal then
-            error("NameError: name '" .. str_name .. "' is not defined")
-        else
-            error("UnboundLocalError: cannot access local variable '" .. str_name .. "' where it is not associated with a value")
+        if not isLocal then error("NameError: name '" .. str_name .. "' is not defined")
+        else error("UnboundLocalError: cannot access local variable '" .. str_name .. "' where it is not associated with a value")
         end
     end
     return name
@@ -145,9 +144,7 @@ end
 local in_operator = function (a, b) return a.__contains__(b) end
 local is_operator = function (a, b) error("TODO") end
 
--- Basic functions
 local rawCall = defFunction(function (objects, func) return func(table.unpack(objects, 1, objects.n)) end, { { Name = "func" } }, true, false)
-
 local custCall = function (func, ...) return func(table.pack(...), {}) end
 
 local print = defFunction(function (objects, sep, endl)
@@ -280,8 +277,8 @@ export const globalDefinitions: { [Name: string]: string } = {
     ["print"]: 'print',
     ["len"]: 'len',
     ["input"]: 'input',
-    ['rawCall']: 'rawCall',
-    ["None"]: 'None',
+    ["rawCall"]: 'rawCall',
+    ["None"]: 'None'
 }
 
 export default polyfills

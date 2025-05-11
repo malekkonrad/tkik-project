@@ -275,8 +275,8 @@ export default function Home() {
 
       <Box sx={{ marginTop: '2vw' }}>
         <Typography align="center">Made with 💔 by:</Typography>
-        <Typography align="center">- Kamil Pustelnik @ <a href='mailto:kpustelnik@student.agh.edu.pl'>kpustelnik@student.agh.edu.pl</a></Typography>
-        <Typography align="center">- Konrad Małek @ <a href='mailto:kmalek@student.agh.edu.pl'>kmalek@student.agh.edu.pl</a></Typography>
+        <Typography align="center">Kamil Pustelnik @ <a href='mailto:kpustelnik@student.agh.edu.pl'>kpustelnik@student.agh.edu.pl</a></Typography>
+        <Typography align="center">Konrad Małek @ <a href='mailto:kmalek@student.agh.edu.pl'>kmalek@student.agh.edu.pl</a></Typography>
       </Box>
     </>
   );

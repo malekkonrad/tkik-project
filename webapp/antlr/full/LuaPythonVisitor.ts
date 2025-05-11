@@ -197,6 +197,7 @@ import PythonLexer from "./PythonLexer";
 import polyfills, { globalDefinitions } from "./LuaPolyfills";
 
 const indent = (txt: string, chars: string = '    ') => txt.split('\n').map(x => chars + x).join('\n')
+
 type LoopData = {
     hasElse: boolean,
     identifier: number
@@ -417,6 +418,25 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             const ann_rhs = ctx.annotated_rhs()
             if (ann_rhs == null) return ''
             return `${definition} = ${this.visit(ann_rhs)}`
+        }
+        const single_target = ctx.single_target()
+        if (single_target != null) { // '(' single_target ')' ':' expression ('=' annotated_rhs )?
+            // Ignore the expressions as the types are not supported
+            const ann_rhs = ctx.annotated_rhs()
+            if (ann_rhs == null) return ''
+            return `${this.visit(single_target)} = ${this.visit(ann_rhs)}`
+        }
+        const single_subscript_attribute_target = ctx.single_subscript_attribute_target()
+        if (single_subscript_attribute_target != null) { // single_subscript_attribute_target ':' expression ('=' annotated_rhs )?
+            /* eg.
+                (x): int = 42
+                a[0]: float = 3.14
+                obj.attr: bool = True
+            */
+            // Ignore the expressions as the types are not supported
+            const ann_rhs = ctx.annotated_rhs()
+            if (ann_rhs == null) return ''
+            return `${this.visit(single_subscript_attribute_target)} = ${this.visit(ann_rhs)}`
         }
         const augassign = ctx.augassign()
         if (augassign != null) { // single_target augassign (yield_expr | star_expressions)
@@ -2433,14 +2453,31 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | '(' single_target ')';
     */
     visitSingle_target(ctx: Single_targetContext): string {
-        return 'TODO single_target' // TODO
+        const sin = ctx.single_target()
+        if (sin != null) return this.visit(sin) // Lua does not accept paranthesis on the left side
+        const name = ctx.name()
+        if (name != null) { // Need to create the definition
+            const currentScope = this.scopeStack.at(-1)
+            if (currentScope == null) throw new Error("Scope not found")
+
+            const definition = currentScope.createDefinitionIfNotExists(this.visit(ctx.name()))
+            return definition
+        }
+        return this.visit(ctx.single_subscript_attribute_target())
     }
     /*
     single_subscript_attribute_target
     : t_primary ('.' name | '[' slices ']');
     */
     visitSingle_subscript_attribute_target(ctx: Single_subscript_attribute_targetContext): string {
-        return 'TODO single_subscript_attribute_target' // TODO
+        const tprimary = ctx.t_primary()
+        if (tprimary != null) {
+            const name = ctx.name()
+            if (name != null) return `${this.visit(tprimary)}.__getattr__(${this.visit(name)})`
+            const slices = ctx.slices()
+            if (slices != null) return `${this.visit(tprimary)}.__getitem__(${this.visit(slices)})`
+        }
+        throw new Error("Unknown single_subscript_attribute_target handling")
     }
     /*
     t_primary
@@ -2508,7 +2545,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             if (cscope == null) throw new Error("Scope not found")
             const txtName = this.visit(name)
             const definition = cscope.createDefinitionIfNotExists(txtName)
-            return `${definition} = nil`
+            return `getOrErr(${definition}, '${txtName}', ${(cscope.scopeType == ScopeType.GLOBAL) ? 'false' : 'true'}); ${definition} = nil`
         }
         const del_target = ctx.del_target()
         if (del_target) return this.visit(del_target)
