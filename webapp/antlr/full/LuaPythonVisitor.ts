@@ -1875,6 +1875,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         const named_expr = ctx.named_expression()
         if (named_expr != null) return this.visit(named_expr)
         const expression_list = ctx.expression_list()
+        return 'TODO'
     }
     /*
     atom
