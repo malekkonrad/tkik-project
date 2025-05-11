@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`} style={{ margin: '0px' }}>
-        <AppBar position="static">
+        <AppBar position="static" sx={{ marginBottom: '2vw' }}>
           <Container maxWidth="xl">
             <Toolbar disableGutters>
               <Typography
