@@ -206,7 +206,8 @@ type LoopData = {
 enum ScopeType {
     GLOBAL,
     FUNCTION,
-    CLASS
+    CLASS,
+    OTHER
 }
 class ScopeData {
     public loopStack: LoopData[] = []
@@ -867,7 +868,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             inner += 'end)'
             inner = indent(inner)
         }*/
-        result += nscope.createScopeDefinitions()
+        result += nscope.createScopeDefinitions() + '\n'
         result += inner
         result += `\nend, { ${lua_rest_args.join(', ')} }, ` // argsData
         result += `${(args_name != null) ? 'true' : 'false'}, `
@@ -2148,7 +2149,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         let result = `defFunction(\n`
         result += `function (${lua_func_params.map(x => nscope.createDefinitionIfNotExists(x, true)).join(', ')})\n`
         const inner = this.visit(ctx.expression())
-        result += nscope.createScopeDefinitions()
+        result += nscope.createScopeDefinitions() + '\n'
         result += inner
         result += `\nend, { ${lua_rest_args.join(', ')} }, ` // argsData
         result += `${(args_name != null) ? 'true' : 'false'}, `
@@ -2317,7 +2318,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     */
     visitFstring(ctx: FstringContext): string {
         const prefixesRes = /^\w+/.exec(ctx.FSTRING_START().getText())
-        const prefixes = (prefixesRes != null) ? prefixesRes[0].split('') : []
+        const prefixes = (prefixesRes != null) ? prefixesRes[0].split('') : [] // eslint-disable-line @typescript-eslint/no-unused-vars
         // TODO: Handle r prefix (should that just be propagated to the actual strings?)
 
         const fstring_middle_list_parsed = ctx.fstring_middle_list().map(x => this.visit(x))

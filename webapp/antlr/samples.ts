@@ -133,7 +133,7 @@ def sym():
         symbol_2 = "X"
         print("Player 2, you are X. ")
     input("Press enter to continue.")
-    print("\n")
+    print("\\n")
     return (symbol_1, symbol_2)
 
 
@@ -271,7 +271,7 @@ def illegal(board, symbol_1, symbol_2, row, column):
 
     
 def report(count, winner, symbol_1, symbol_2):
-    print("\n")
+    print("\\n")
     input("Press enter to see the game summary. ")
     if (winner == False) and (count % 2 == 1 ):
         print("Winner : Player " + symbol_1 + ".")
