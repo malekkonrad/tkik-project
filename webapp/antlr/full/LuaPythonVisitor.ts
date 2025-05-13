@@ -214,9 +214,10 @@ class ScopeData {
     public hiddenDefinitions: { [Name: string]: string } = {} // Won't be redefined
     public scopeId: number
     public lastDefinitionIdentifier = 0;
-    public scopeType;
+    public scopeType: ScopeType;
     public parentScope: ScopeData | null;
     public usedDefinitions: Set<string> = new Set<string>();
+    public usesYield: boolean = false;
 
     constructor (scopeId: number, scopeType: ScopeType, parentScope: ScopeData | null) {
         this.scopeId = scopeId
@@ -569,7 +570,24 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : 'raise' (expression ('from' expression )?)?;
     */
     visitRaise_stmt(ctx: Raise_stmtContext): string {
-        return 'TODO raise_stmt' // TODO
+        const expression_list = ctx.expression_list()
+        if (expression_list.length == 0) { // raise     [reraise the exception]
+            let result = ''
+            result += `if uncaught == nil then error('RuntimeError: No active exception to reraise') end`
+            // TODO: Exception reraising
+            return result
+        } else if (expression_list.length == 1) { // raise EXCEPTION
+            let result = ''
+            result += `error(${this.visit(expression_list[0])})`
+            // TODO: Analyse if theres uncaught present
+            return result
+        } else if (expression_list.length == 2) { // raise EXCEPTION from EXCEPTION
+            let result = ''
+            result += `error(${this.visit(expression_list[0])})`
+            // TODO: Analyse if theres uncaught present
+            return result
+        }
+        throw new Error("Unexpected raise_stmt handling")
     }
     /*
     global_stmt: 'global' name (',' name)*;
@@ -647,7 +665,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     yield_stmt: yield_expr;
     */
     visitYield_stmt(ctx: Yield_stmtContext): string {
-        return 'TODO yield_stmt' // TODO
+        return this.visit(ctx.yield_expr())
     }
     /*
     assert_stmt: 'assert' expression (',' expression )?;
@@ -1026,12 +1044,12 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         cscope.loopStack.push(ld)
 
         let result = `while ${this.visit(ctx.named_expression())} do\n`
-        result += this.visit(ctx.block())
-        result += `::${this.loopContinueLabel}${ld.identifier}::`
+        result += indent(this.visit(ctx.block()))
+        result += indent(`::${this.loopContinueLabel}${ld.identifier}::`)
         result += '\nend'
         if (ld.hasElse) {
             this.putBlock = true // adds the `do`, `end` block
-            result += this.visit(ctx.block())
+            result += this.visit(else_block)
             result += `::${this.loopBreakLabel}${ld.identifier}::`
         }
 
@@ -1046,7 +1064,43 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : 'async'? 'for' star_targets 'in' star_expressions ':' block else_block?;
     */
     visitFor_stmt(ctx: For_stmtContext): string {
-        return 'TODO for_stmt' // TODO
+        // https://stackoverflow.com/questions/56161595/how-to-use-async-for-in-python
+        const isAsync = ctx.ASYNC() != null
+        const iterFunc = isAsync ? 'aiter' : 'iter'
+        const nextFunc = isAsync ? 'anext' : 'next' // TODO: Technically its `await anext`
+        const stopiterClass = isAsync ? 'StopIteration' : 'StopAsyncIteration'
+
+        const cscope = this.scopeStack.at(-1)
+        if (cscope == null) throw new Error("Scope not found")
+
+        const else_block = ctx.else_block()
+        const ld: LoopData = {
+            identifier: this.lastLoopIdentifier += 1,
+            hasElse: else_block != null,
+            tryCount: 0
+        }
+        cscope.loopStack.push(ld)
+
+        let result = `local it = ${iterFunc}(${this.visit(ctx.star_expressions())})\n`
+        result += 'while true do\n'
+        let inner = ''
+        inner += 'local suc, ret = pcall(function()\n'
+        inner += indent(`local ass_res = ${nextFunc}(it)`) + '\n'
+        inner += indent(this.visit(ctx.star_targets())) + '\n'
+        inner += 'end)'
+        inner += `if suc == false and ret ~= nil and instanceof(ret, ${stopiterClass}) then ${ld.hasElse ? `goto ${this.loopBreakLabel}${ld.identifier}` : 'break'} end`
+        inner += this.visit(ctx.block())
+        result += indent(inner)
+        result += indent(`::${this.loopContinueLabel}${ld.identifier}::`)
+        result += '\nend'
+        if (ld.hasElse) {
+            this.putBlock = true
+            result += this.visit(else_block)
+            result += `::${this.loopBreakLabel}${ld.identifier}::`
+        }
+        
+        cscope.loopStack.pop()
+        return result
     }
     // --------------
     // With statement
@@ -1567,7 +1621,19 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : 'yield' ('from' expression | star_expressions?);
     */
     visitYield_expr(ctx: Yield_exprContext): string {
-        return 'TODO yield_expr' // TODO
+        const cscope = this.scopeStack.at(-1)
+        if (cscope == null) throw new Error("No scope found")
+        cscope.usesYield = true
+        
+        const star_exprs = ctx.star_expressions()
+        if (star_exprs != null && star_exprs.getChildCount() == 1 && (star_exprs.getChild(0) as Star_expressionContext).bitwise_or() != null) {
+            throw new Error("SyntaxError: can't use starred expression here")
+        }
+        const expression = ctx.expression()
+        if (expression != null) {
+            // TODO: yield from essentially does for on expression and yields every value; it returns the value returned by expression (if its a function)
+        }
+        return `coroutine.yield(${(expression != null) ? this.visit(expression) : ''})`
     }
     /*
     star_expressions
@@ -2320,12 +2386,13 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : '(' (star_named_expression ',' star_named_expressions?  )? ')';
     */
     visitTuple(ctx: TupleContext): string {
+        const star_named_expression = ctx.star_named_expression()
         const star_named_expressions = ctx.star_named_expressions()
         if (star_named_expressions != null) {
             if (star_named_expressions.getChildCount() > 1) { // This indicates the result is a tuple
-                return `tuple(${this.visit(star_named_expressions)})` // TODO: Change to tuple class
+                return `tuple(tableMerge(${this.visit(star_named_expression)}, ${this.visit(star_named_expressions)}))` // TODO: Change to tuple class
             } else {
-                return `tuple({${this.visit(star_named_expressions)}})`
+                return `tuple(tableMerge(${this.visit(star_named_expression)}, {${this.visit(star_named_expressions)}}))`
             }
         }
         return '{}'
