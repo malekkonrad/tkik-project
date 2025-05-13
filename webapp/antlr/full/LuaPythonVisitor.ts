@@ -807,6 +807,13 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | function_def_raw;
     */
     visitFunction_def(ctx: Function_defContext): string {
+        const cscope = this.scopeStack.at(-1)
+        if (cscope == null) throw new Error("Stack not found")
+
+        const funcName = ctx.function_def_raw().name()
+        const txtName = this.visit(funcName)
+        const definition = cscope.createDefinitionIfNotExists(txtName)
+
         const fdr = ctx.function_def_raw()
         let result = this.visit(fdr)
         const decorators = ctx.decorators()
@@ -816,13 +823,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
                 result = `custCall(${this.visit}, ${fdr})`
             }
         }
-        
-        const cscope = this.scopeStack.at(-1)
-        if (cscope == null) throw new Error("Stack not found")
 
-        const funcName = ctx.function_def_raw().name()
-        const txtName = this.visit(funcName)
-        const definition = cscope.createDefinitionIfNotExists(txtName)
         return `${definition} = ${result}`
     }
     /*
@@ -1009,7 +1010,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : 'elif' named_expression ':' block (elif_stmt | else_block?);
     */
     visitElif_stmt(ctx: Elif_stmtContext): string {
-        let result = `else if ${this.visit(ctx.named_expression())} then\n`
+        let result = `elseif ${this.visit(ctx.named_expression())} then\n`
         result += this.visit(ctx.block())
         const elif_stmt = ctx.elif_stmt()
         if (elif_stmt != null) result += `\n${this.visit(elif_stmt)}`
