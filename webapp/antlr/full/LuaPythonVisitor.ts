@@ -1009,7 +1009,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : 'elif' named_expression ':' block (elif_stmt | else_block?);
     */
     visitElif_stmt(ctx: Elif_stmtContext): string {
-        let result = `elif ${this.visit(ctx.named_expression())} then\n`
+        let result = `else if ${this.visit(ctx.named_expression())} then\n`
         result += this.visit(ctx.block())
         const elif_stmt = ctx.elif_stmt()
         if (elif_stmt != null) result += `\n${this.visit(elif_stmt)}`
@@ -1746,52 +1746,52 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         for (const cop_bop of ctx.compare_op_bitwise_or_pair_list()) {
             const eq_bor = cop_bop.eq_bitwise_or()
             if (eq_bor != null) {
-                result += `(${result} == ${this.visit(eq_bor.bitwise_or())})`
+                result = `(${result} == ${this.visit(eq_bor.bitwise_or())})`
                 continue
             }
             const noteq_bor = cop_bop.noteq_bitwise_or()
             if (noteq_bor != null) {
-                result += `(${result} ~= ${this.visit(noteq_bor.bitwise_or())})`
+                result = `(${result} ~= ${this.visit(noteq_bor.bitwise_or())})`
                 continue
             }
             const lte_bor = cop_bop.lte_bitwise_or()
             if (lte_bor != null) {
-                result += `(${result} <= ${this.visit(lte_bor.bitwise_or())})`
+                result = `(${result} <= ${this.visit(lte_bor.bitwise_or())})`
                 continue
             }
             const lt_bor = cop_bop.lt_bitwise_or()
             if (lt_bor != null) {
-                result += `(${result} < ${this.visit(lt_bor.bitwise_or())})`
+                result = `(${result} < ${this.visit(lt_bor.bitwise_or())})`
                 continue
             }
             const gte_bor = cop_bop.gte_bitwise_or()
             if (gte_bor != null) {
-                result += `(${result} >= ${this.visit(gte_bor.bitwise_or())})`
+                result = `(${result} >= ${this.visit(gte_bor.bitwise_or())})`
                 continue
             }
             const gt_bor = cop_bop.gt_bitwise_or()
             if (gt_bor != null) {
-                result += `(${result} > ${this.visit(gt_bor.bitwise_or())})`
+                result = `(${result} > ${this.visit(gt_bor.bitwise_or())})`
                 continue
             }
             const notin_bor = cop_bop.notin_bitwise_or()
             if (notin_bor != null) {
-                result += `not in_operator(${result}, ${this.visit(notin_bor.bitwise_or())})`
+                result = `not in_operator(${result}, ${this.visit(notin_bor.bitwise_or())})`
                 continue
             }
             const in_bor = cop_bop.in_bitwise_or()
             if (notin_bor != null) {
-                result += `in_operator(${result}, ${this.visit(in_bor.bitwise_or())})`
+                result = `in_operator(${result}, ${this.visit(in_bor.bitwise_or())})`
                 continue
             }
             const notis_bor = cop_bop.isnot_bitwise_or()
             if (notis_bor != null) {
-                result += `not is_operator(${result}, ${this.visit(notis_bor.bitwise_or())})`
+                result = `not is_operator(${result}, ${this.visit(notis_bor.bitwise_or())})`
                 continue
             }
             const is_bor = cop_bop.is_bitwise_or()
             if (is_bor != null) {
-                result += `is_operator(${result}, ${this.visit(is_bor.bitwise_or())})`
+                result = `is_operator(${result}, ${this.visit(is_bor.bitwise_or())})`
                 continue
             }
             throw new Error("Unknown comparison handling")
