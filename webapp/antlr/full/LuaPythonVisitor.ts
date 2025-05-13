@@ -1140,7 +1140,25 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : 'except' (expression ('as' name )?)? ':' block;
     */
     visitExcept_block(ctx: Except_blockContext): string {
-        return 'TODO except_block' // TODO
+        const expression = ctx.expression()
+        const name = ctx.name()
+        const block = ctx.block()
+        
+        let result = `if uncaught ~= nil and custCall(instanceof, uncaught, ${this.visit(expression)}) then\n`
+        let inner = ''
+        if (name != null) {
+            const cscope = this.scopeStack.at(-1)
+            if (cscope == null) throw new Error("Scope not found")
+            const txtName = this.visit(name)
+            const definition = cscope.createDefinitionIfNotExists(txtName, true)
+            inner += `${definition} = uncaught\n`
+            inner += indent(this.visit(block))
+            inner += `\nuncaught = nil\n`
+            inner += `${definition} = nil` // I don't know why; it just works this way
+        }
+        result += indent(inner)
+        result += '\nend'
+        return result
     }
     /*
     except_star_block
