@@ -200,7 +200,8 @@ const indent = (txt: string, chars: string = '    ') => txt.split('\n').map(x =>
 
 type LoopData = {
     hasElse: boolean,
-    identifier: number
+    identifier: number,
+    tryCount: 0
 }
 enum ScopeType {
     GLOBAL,
@@ -262,6 +263,11 @@ class ScopeData {
         const nname = `${name}_${this.scopeId}_${this.lastDefinitionIdentifier++}`;
         (hidden ? this.hiddenDefinitions : this.definitions)[name] = nname
         return nname
+    }
+
+    removeDefinition(name: string): void {
+        delete this.hiddenDefinitions[name]
+        delete this.definitions[name]
     }
 
     addDefinition(name: string, definition: string, hidden: boolean = false): void {
@@ -364,7 +370,10 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
                     if (scope == null) throw new Error("Scope not found") // Should never happen
                     if (scope.loopStack.length == 0) throw new Error("SyntaxError: 'break' outside loop")
                     ld = scope.loopStack.at(-1)
-                    if (ld?.hasElse) {
+                    if (ld == null) throw new Error('Loop not found') // Should absolutely never happen
+
+                    if (ld.tryCount > 0) return 'return nil, 1'
+                    if (ld.hasElse) {
                         return `goto ${this.loopBreakLabel}${ld.identifier}` // There is an else block and we should therefore use goto
                     } else {
                         return 'break'
@@ -374,6 +383,9 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
                     if (scope == null) throw new Error("Scope not found") // Should never happen
                     if (scope.loopStack.length == 0) throw new Error("SyntaxError: 'continue' not properly in loop")
                     ld = scope.loopStack.at(-1)
+                    if (ld == null) throw new Error('Loop not found') // Should absolutely never happen
+
+                    if (ld.tryCount > 0) return 'return nil, 2' 
                     return `goto ${this.loopContinueLabel}${ld?.identifier}`
             }
         }
@@ -535,7 +547,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | '//=';
     */
     visitAugassign(ctx: AugassignContext): string { // eslint-disable-line @typescript-eslint/no-unused-vars
-        throw new Error("Augassign is parsed within assignment")
+        throw new Error("augassign is parsed within assignment")
     }
     /*
     return_stmt : 'return' star_expressions?;
@@ -731,16 +743,10 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         const shouldInsertDo = this.putBlock
         this.putBlock = false // Reset
 
-        let result = shouldInsertDo ? 'do\n' : ''
         const stmts = ctx.statements()
         const simple_stmts = ctx.simple_stmts()
-        if (stmts != null) {
-            result += indent(this.visit(stmts))
-        } else if (simple_stmts != null) {
-            result += indent(this.visit(simple_stmts))
-        }
-        if (shouldInsertDo) result += '\nend'
-        return result
+        const inner = (stmts != null) ? this.visit(stmts) : this.visit(simple_stmts)
+        return shouldInsertDo ? `do\n${indent(inner)}\nend` : inner
     }
     /*
     decorators: ('@' named_expression NEWLINE )+;
@@ -1014,7 +1020,8 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         const else_block = ctx.else_block()
         const ld: LoopData = {
             identifier: this.lastLoopIdentifier += 1,
-            hasElse: else_block != null
+            hasElse: else_block != null,
+            tryCount: 0
         }
         cscope.loopStack.push(ld)
 
@@ -1071,7 +1078,59 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | 'try' ':' block except_star_block+ else_block? finally_block?;
     */
     visitTry_stmt(ctx: Try_stmtContext): string {
-        return 'TODO try_stmt' // TODO
+        const cscope = this.scopeStack.at(-1)
+        if (cscope == null) throw new Error("Scope not found")
+        const loopData: LoopData | undefined = cscope.loopStack.at(-1)
+        
+        if (loopData != null) loopData.tryCount += 1
+        let res = 'local trysucc, tryres, specAct = pcall(function ()\n'
+        {
+            let innerRes = `local trysucc, tryres, specAct = pcall(function()\n`
+            innerRes += indent(this.visit(ctx.block()))
+            innerRes += '\nend)\n'
+            innerRes += 'if trysucc == false then\n'
+            let inner = 'local uncaught = tryres\n'
+            const except_block_list = ctx.except_block_list() ?? ctx.except_star_block_list()
+            for (const except_block of except_block_list) {
+                inner += this.visit(except_block)
+            }
+            inner += 'if uncaught ~= nil then error(uncaught) end' // Rethrow by default
+            innerRes += indent(inner)
+            innerRes += '\nelse\n'
+            innerRes += indent('if tryres ~= nil then return tryres end') + '\n' // Repeat return from inside the function
+            innerRes += indent(`if specAct ~= nil then return nil, specAct end`) + '\n' // This will always be in try func
+            const else_block = ctx.else_block()
+            if (else_block != null) {
+                innerRes += indent(this.visit(else_block)) + '\n'
+            }
+            innerRes += 'end'
+            res += indent(innerRes)
+        }
+        res += '\nend)\n'
+        if (loopData != null) loopData.tryCount -= 1
+
+        const finally_block = ctx.finally_block() // Handle finally block
+        if (finally_block != null) res += indent(this.visit(finally_block)) + '\n'
+        // Replicate result of the try except else
+        res += 'if trysuc == true then\n'
+        res += indent('if tryres ~= nil then return tryres end') + '\n' // Repeat return if the function inside has returned
+        if (loopData != null) {
+            let innerRes = 'if specAct ~= nil then\n'
+            let inner = ''
+            if (loopData.tryCount == 0) { // Need to handle it here
+                inner += `if specAct == 1 then ${loopData.hasElse ? `goto ${this.loopBreakLabel}${loopData.identifier}` : 'break'} end` // Break
+                inner += `if specAct == 2 then goto ${this.loopContinueLabel}${loopData.identifier} end` // Continue
+            } else { // Replicate back
+                inner += 'return nil, specAct'
+            }
+            innerRes += indent(inner)
+            innerRes += '\nend'
+            res += indent(innerRes) + '\n'
+        }
+        res += 'else\n'
+        res += indent('error(tryres)')
+        res += '\nend'
+        return res
     }
     // ----------------
     // Except statement
@@ -1095,7 +1154,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : 'finally' ':' block;
     */
     visitFinally_block(ctx: Finally_blockContext): string {
-        return 'TODO finally_block' // TODO
+        return this.visit(ctx.block())
     }
     // ---------------
     // Match statement
