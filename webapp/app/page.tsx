@@ -152,7 +152,7 @@ export default function Home() {
             <Editor
               height="90vh"
               defaultLanguage="python"
-              defaultValue="// Put your code here"
+              defaultValue="# Put your code here"
               onChange={value => setCode(value ?? '')}
               onMount={(editor) => editorRef.current = editor}
             />;
