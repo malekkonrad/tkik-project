@@ -1967,64 +1967,11 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         const term = ctx.term()
         if (sum != null) {
             const op = ctx.getChild(1) as TerminalNode
-            const leftResult = this.visit(sum)
-            const rightResult = this.visit(term)
-
-            const complexPattern = /^Complex\.new\(0,\s*([^)]+)\)$/
-            const negativeComplexPattern = /^-\(Complex\.new\(0,\s*([^)]+)\)\)$/
             switch (op.symbol.type) {
                 case PythonLexer.PLUS:
-                    // 3j + 3 → Complex.new(3, 3)
-                    const leftComplex = leftResult.match(complexPattern)
-                    if (leftComplex && /^-?\d+(\.\d+)?$/.test(rightResult)) {
-                        return `Complex.new(${rightResult}, ${leftComplex[1]})`
-                    }
-                    
-                    // -3j + 3 → Complex.new(3, -3)
-                    const leftNegComplex = leftResult.match(negativeComplexPattern)
-                    if (leftNegComplex && /^-?\d+(\.\d+)?$/.test(rightResult)) {
-                        return `Complex.new(${rightResult}, -${leftNegComplex[1]})`
-                    }
-                    
-                    // 3 + 3j → Complex.new(3, 3)
-                    const rightComplex = rightResult.match(complexPattern)
-                    if (rightComplex && /^-?\d+(\.\d+)?$/.test(leftResult)) {
-                        return `Complex.new(${leftResult}, ${rightComplex[1]})`
-                    }
-                    
-                    // 3 + (-3j) → Complex.new(3, -3)
-                    const rightNegComplex = rightResult.match(negativeComplexPattern)
-                    if (rightNegComplex && /^-?\d+(\.\d+)?$/.test(leftResult)) {
-                        return `Complex.new(${leftResult}, -${rightNegComplex[1]})`
-                    }
-                    
-                    return `${leftResult} + ${rightResult}`
+                    return `${this.visit(sum)} + ${this.visit(term)}`
                 case PythonLexer.MINUS:
-                    // 3j - 3 → Complex.new(-3, 3)
-                    const leftComplex2 = leftResult.match(complexPattern)
-                    if (leftComplex2 && /^-?\d+(\.\d+)?$/.test(rightResult)) {
-                        return `Complex.new(-${rightResult}, ${leftComplex2[1]})`
-                    }
-                    
-                    // -3j - 3 → Complex.new(-3, -3)
-                    const leftNegComplex2 = leftResult.match(negativeComplexPattern)
-                    if (leftNegComplex2 && /^-?\d+(\.\d+)?$/.test(rightResult)) {
-                        return `Complex.new(-${rightResult}, -${leftNegComplex2[1]})`
-                    }
-                    
-                    // 3 - 3j → Complex.new(3, -3)
-                    const rightComplex2 = rightResult.match(complexPattern)
-                    if (rightComplex2 && /^-?\d+(\.\d+)?$/.test(leftResult)) {
-                        return `Complex.new(${leftResult}, -${rightComplex2[1]})`
-                    }
-                    
-                    // 3 - (-3j) → Complex.new(3, 3)
-                    const rightNegComplex2 = rightResult.match(negativeComplexPattern)
-                    if (rightNegComplex2 && /^-?\d+(\.\d+)?$/.test(leftResult)) {
-                        return `Complex.new(${leftResult}, ${rightNegComplex2[1]})`
-                    }
-                    
-                    return `${leftResult} - ${rightResult}`
+                    return `${this.visit(sum)} - ${this.visit(term)}`
             }
         }
         return this.visit(term)

@@ -318,6 +318,9 @@ function Complex.__eq(a, b)
     return a.re == b.re and a.im == b.im
 end
 
+function Complex.__unm(c)
+    return Complex.new(-c.re, -c.im)
+end
 
 function Complex.__tostring(c)
     if c.re == 0 then
@@ -325,10 +328,6 @@ function Complex.__tostring(c)
     end
     return ("(%g%+gi)"):format(c.re, c.im)
 end
-
-
-
-
 `
 
 // Global definitions that are supposed to be reachable in code
