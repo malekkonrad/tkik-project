@@ -1356,8 +1356,27 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : signed_real_number ('+' | '-') imaginary_number;
     */
     visitComplex_number(ctx: Complex_numberContext): string {
-        return 'TODO complex_number' // TODO
+        const signed_num = ctx.signed_real_number()
+        const sign = ctx.getChild(1) // Either '+' or '-'
+        const imag_num = ctx.imaginary_number()
+        if (imag_num == null) {
+            return this.visit(signed_num)
+        }
+
+        const realPart = this.visit(signed_num)
+        
+        const imagPart = this.visit(imag_num)
+    
+        const signText = sign.getText() // Either '+' or '-'
+        
+        if (signText === '+') {
+            return `Complex.new(${realPart}, ${imagPart})`
+        } else if (signText === '-') {
+            return `Complex.new(${realPart}, -${imagPart})`
+        }
+        return `Complex.new(${realPart}, ${imagPart})` // Fallback, should not happen
     }
+
     /*
     signed_number
     : '-'? NUMBER;
@@ -1390,7 +1409,11 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : NUMBER;
     */
     visitImaginary_number(ctx: Imaginary_numberContext): string {
-        return 'TODO imaginary_number' // TODO
+        const numberText = ctx.NUMBER().getText()
+        // Check if the number ends with 'j' or 'J'
+
+        // Remove the 'j' or 'J' suffix and return the numeric part
+        return numberText.replace(/[jJ]$/, '')
     }
     /*
     capture_pattern
@@ -1932,7 +1955,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         return this.visit(sum)
     }
     // --------------------
-    // Arithmetic operators
+    // Arithmetic operators (with complex numbers support)
     // --------------------
     /*
     sum
@@ -1944,11 +1967,64 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         const term = ctx.term()
         if (sum != null) {
             const op = ctx.getChild(1) as TerminalNode
+            const leftResult = this.visit(sum)
+            const rightResult = this.visit(term)
+
+            const complexPattern = /^Complex\.new\(0,\s*([^)]+)\)$/
+            const negativeComplexPattern = /^-\(Complex\.new\(0,\s*([^)]+)\)\)$/
             switch (op.symbol.type) {
                 case PythonLexer.PLUS:
-                    return `${this.visit(sum)} + ${this.visit(term)}`
+                    // 3j + 3 → Complex.new(3, 3)
+                    const leftComplex = leftResult.match(complexPattern)
+                    if (leftComplex && /^-?\d+(\.\d+)?$/.test(rightResult)) {
+                        return `Complex.new(${rightResult}, ${leftComplex[1]})`
+                    }
+                    
+                    // -3j + 3 → Complex.new(3, -3)
+                    const leftNegComplex = leftResult.match(negativeComplexPattern)
+                    if (leftNegComplex && /^-?\d+(\.\d+)?$/.test(rightResult)) {
+                        return `Complex.new(${rightResult}, -${leftNegComplex[1]})`
+                    }
+                    
+                    // 3 + 3j → Complex.new(3, 3)
+                    const rightComplex = rightResult.match(complexPattern)
+                    if (rightComplex && /^-?\d+(\.\d+)?$/.test(leftResult)) {
+                        return `Complex.new(${leftResult}, ${rightComplex[1]})`
+                    }
+                    
+                    // 3 + (-3j) → Complex.new(3, -3)
+                    const rightNegComplex = rightResult.match(negativeComplexPattern)
+                    if (rightNegComplex && /^-?\d+(\.\d+)?$/.test(leftResult)) {
+                        return `Complex.new(${leftResult}, -${rightNegComplex[1]})`
+                    }
+                    
+                    return `${leftResult} + ${rightResult}`
                 case PythonLexer.MINUS:
-                    return `${this.visit(sum)} - ${this.visit(term)}`
+                    // 3j - 3 → Complex.new(-3, 3)
+                    const leftComplex2 = leftResult.match(complexPattern)
+                    if (leftComplex2 && /^-?\d+(\.\d+)?$/.test(rightResult)) {
+                        return `Complex.new(-${rightResult}, ${leftComplex2[1]})`
+                    }
+                    
+                    // -3j - 3 → Complex.new(-3, -3)
+                    const leftNegComplex2 = leftResult.match(negativeComplexPattern)
+                    if (leftNegComplex2 && /^-?\d+(\.\d+)?$/.test(rightResult)) {
+                        return `Complex.new(-${rightResult}, -${leftNegComplex2[1]})`
+                    }
+                    
+                    // 3 - 3j → Complex.new(3, -3)
+                    const rightComplex2 = rightResult.match(complexPattern)
+                    if (rightComplex2 && /^-?\d+(\.\d+)?$/.test(leftResult)) {
+                        return `Complex.new(${leftResult}, -${rightComplex2[1]})`
+                    }
+                    
+                    // 3 - (-3j) → Complex.new(3, 3)
+                    const rightNegComplex2 = rightResult.match(negativeComplexPattern)
+                    if (rightNegComplex2 && /^-?\d+(\.\d+)?$/.test(leftResult)) {
+                        return `Complex.new(${leftResult}, ${rightNegComplex2[1]})`
+                    }
+                    
+                    return `${leftResult} - ${rightResult}`
             }
         }
         return this.visit(term)
@@ -2087,7 +2163,14 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
                 case PythonLexer.FALSE:
                     return 'false'
                 case PythonLexer.NUMBER:
-                    return t.getText() // TODO: Check number lexing if any adjustments have to be made
+                    const numberText = t.getText()
+                    // Check if it's an imaginary number
+                    if (/[jJ]$/.test(numberText)) {
+                        const imagPart = numberText.replace(/[jJ]$/, '')
+
+                        return `Complex.new(0, ${imagPart})`
+                    }
+                    return numberText // TODO: Check number lexing if any adjustments have to be made
                 case PythonLexer.ELLIPSIS:
                     return 'Ellipsis'
             }
