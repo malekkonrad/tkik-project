@@ -314,8 +314,8 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             result += "\n-- Program content\n"
             const program = this.visit(statements)
             result += this.scopeStack.at(-1)?.createScopeDefinitions() + '\n' // Inject scope definitions
-            result += program + '\n\n'
-            result += this.scopeStack.at(-1)?.createExportDefinitions()
+            result += program
+            result += '\n\n' + this.scopeStack.at(-1)?.createExportDefinitions()
             return result
         }
         return ''
