@@ -1356,8 +1356,27 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : signed_real_number ('+' | '-') imaginary_number;
     */
     visitComplex_number(ctx: Complex_numberContext): string {
-        return 'TODO complex_number' // TODO
+        const signed_num = ctx.signed_real_number()
+        const sign = ctx.getChild(1) // Either '+' or '-'
+        const imag_num = ctx.imaginary_number()
+        if (imag_num == null) {
+            return this.visit(signed_num)
+        }
+
+        const realPart = this.visit(signed_num)
+        
+        const imagPart = this.visit(imag_num)
+    
+        const signText = sign.getText() // Either '+' or '-'
+        
+        if (signText === '+') {
+            return `Complex.new(${realPart}, ${imagPart})`
+        } else if (signText === '-') {
+            return `Complex.new(${realPart}, -${imagPart})`
+        }
+        return `Complex.new(${realPart}, ${imagPart})` // Fallback, should not happen
     }
+
     /*
     signed_number
     : '-'? NUMBER;
@@ -1390,7 +1409,11 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     : NUMBER;
     */
     visitImaginary_number(ctx: Imaginary_numberContext): string {
-        return 'TODO imaginary_number' // TODO
+        const numberText = ctx.NUMBER().getText()
+        // Check if the number ends with 'j' or 'J'
+
+        // Remove the 'j' or 'J' suffix and return the numeric part
+        return numberText.replace(/[jJ]$/, '')
     }
     /*
     capture_pattern
@@ -1932,7 +1955,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         return this.visit(sum)
     }
     // --------------------
-    // Arithmetic operators
+    // Arithmetic operators (with complex numbers support)
     // --------------------
     /*
     sum
@@ -2087,7 +2110,14 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
                 case PythonLexer.FALSE:
                     return 'false'
                 case PythonLexer.NUMBER:
-                    return t.getText() // TODO: Check number lexing if any adjustments have to be made
+                    const numberText = t.getText()
+                    // Check if it's an imaginary number
+                    if (/[jJ]$/.test(numberText)) {
+                        const imagPart = numberText.replace(/[jJ]$/, '')
+
+                        return `Complex.new(0, ${imagPart})`
+                    }
+                    return numberText // TODO: Check number lexing if any adjustments have to be made
                 case PythonLexer.ELLIPSIS:
                     return 'Ellipsis'
             }
@@ -2329,33 +2359,112 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     /*
     string: STRING;
     */
-    visitString(ctx: StringContext): string {
+   visitString(ctx: StringContext): string {
         let stringText = ctx.STRING().getText()
-        const prefixesRes = /^\w+/.exec(stringText)
-        if (prefixesRes != null) stringText = stringText.substring(prefixesRes[0].length) // Remove the flags
         
-        const prefixes = (prefixesRes != null) ? prefixesRes[0].split('') : []
-        if (prefixes.indexOf('r') != -1) {
-            // Parse \u
-            // TODO: The following wont fully work as we need to count the number of `\` (need to change it to a loop or so?)
-            stringText = stringText.replaceAll(/(?<!\\)\\u([0-9a-fA-F]{4})/g, (_, v) => String.fromCharCode(parseInt(v, 16)))
-            stringText = stringText.replaceAll(/(?<!\\)\\U([0-9a-fA-F]{8})/g, (_, v) => String.fromCharCode(parseInt(v, 16)))
-            stringText = stringText.replaceAll(/(?<!\\)\\x([0-9a-fA-F]{2})/g, (_, v) => String.fromCharCode(parseInt(v, 16)))
-            stringText = stringText.replaceAll(/(?<!\\)\\([0-8]{1,3})/g, (_, v) => String.fromCharCode(parseInt(v, 8)))
-            // \n{name} is unsupported // https://docs.python.org/3/reference/lexical_analysis.html
-        } else {
-            stringText = stringText.replaceAll(/\\/g, '\\\\') // Parse the '\' to '\\' so that it's escaped
+        // Extract prefixes (r, b, u, f, etc.)
+        const prefixMatch = stringText.match(/^([rRbBuUfF]*)/);
+        const prefixes = prefixMatch ? prefixMatch[1].toLowerCase().split('') : [];
+        
+        // Remove prefixes from string
+        if (prefixMatch && prefixMatch[1]) {
+            stringText = stringText.substring(prefixMatch[1].length);
         }
-        if (stringText.startsWith("'''") || stringText.startsWith('"""')) {
-            // Goal here is to change `'''` to ' and then escape any not already escaped  `'`
-            // TODO: Also need to make sure to count the number of `\`
-            let innerText = stringText.substring(3, stringText.length - 3)
-            innerText = innerText.replaceAll(/(?<!\\)'/g, "'")
-            stringText = `'${innerText}'`
+        
+        const isRaw = prefixes.includes('r');
+        const isByte = prefixes.includes('b');
+        const isUnicode = prefixes.includes('u');
+        
+        // Handle triple-quoted strings
+        let isTripleQuoted = false;
+        if (stringText.startsWith('"""') || stringText.startsWith("'''")) {
+            isTripleQuoted = true;
+            stringText = stringText.substring(3, stringText.length - 3);
+        } else if (stringText.startsWith('"') || stringText.startsWith("'")) {
+            stringText = stringText.substring(1, stringText.length - 1);
         }
-        // TODO: Should be a byte type instead of a string if there is a `b` prefix
-        return stringText
+        
+        // Process escape sequences only if not raw string
+        if (!isRaw) {
+            // Standard escape sequences
+            stringText = stringText
+                .replace(/\\n/g, '\n')
+                .replace(/\\t/g, '\t')
+                .replace(/\\r/g, '\r')
+                .replace(/\\b/g, '\b')
+                .replace(/\\f/g, '\f')
+                .replace(/\\v/g, '\v')
+                .replace(/\\0/g, '\0')
+                .replace(/\\\\/g, '\\')
+                .replace(/\\'/g, "'")
+                .replace(/\\"/g, '"');
+            
+            // Unicode escape sequences
+            stringText = stringText
+                .replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+                .replace(/\\U([0-9a-fA-F]{8})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+                .replace(/\\x([0-9a-fA-F]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+            
+            // Octal escape sequences
+            stringText = stringText.replace(/\\([0-7]{1,3})/g, (_, octal) => 
+                String.fromCharCode(parseInt(octal, 8))
+            );
+        }else{
+            // ignoring escape sequences for raw strings
+            stringText = stringText.replace(/\\/g, '\\\\');
+            return `'${stringText}'`; 
+        }
+        
+        // For triple-quoted strings, use Lua's long string syntax
+        if (isTripleQuoted) {
+            // Find appropriate level for Lua long string
+            let level = 0;
+            while (stringText.includes(`]${'='.repeat(level)}]`)) {
+                level++;
+            }
+            const equals = '='.repeat(level);
+            return `[${equals}[${stringText}]${equals}]`;
+        }
+        
+        // Escape single quotes for Lua (since we'll wrap in single quotes)
+        stringText = stringText.replace(/'/g, "\\'");
+        
+        // Handle different string types
+        if (isByte) {
+            // TODO: Return byte string representation for Lua
+            return `'${stringText}'`; // Placeholder - implement byte string handling
+        }
+        
+        // Return as Lua string literal
+        return `'${stringText}'`;
     }
+    // visitString(ctx: StringContext): string {
+    //     let stringText = ctx.STRING().getText()
+    //     const prefixesRes = /^\w+/.exec(stringText)
+    //     if (prefixesRes != null) stringText = stringText.substring(prefixesRes[0].length) // Remove the flags
+        
+    //     const prefixes = (prefixesRes != null) ? prefixesRes[0].split('') : []
+    //     if (prefixes.indexOf('r') != -1) {
+    //         // Parse \u
+    //         // TODO: The following wont fully work as we need to count the number of `\` (need to change it to a loop or so?)
+    //         stringText = stringText.replaceAll(/(?<!\\)\\u([0-9a-fA-F]{4})/g, (_, v) => String.fromCharCode(parseInt(v, 16)))
+    //         stringText = stringText.replaceAll(/(?<!\\)\\U([0-9a-fA-F]{8})/g, (_, v) => String.fromCharCode(parseInt(v, 16)))
+    //         stringText = stringText.replaceAll(/(?<!\\)\\x([0-9a-fA-F]{2})/g, (_, v) => String.fromCharCode(parseInt(v, 16)))
+    //         stringText = stringText.replaceAll(/(?<!\\)\\([0-8]{1,3})/g, (_, v) => String.fromCharCode(parseInt(v, 8)))
+    //         // \n{name} is unsupported // https://docs.python.org/3/reference/lexical_analysis.html
+    //     } else {
+    //         stringText = stringText.replaceAll(/\\/g, '\\\\') // Parse the '\' to '\\' so that it's escaped
+    //     }
+    //     if (stringText.startsWith("'''") || stringText.startsWith('"""')) {
+    //         // Goal here is to change `'''` to ' and then escape any not already escaped  `'`
+    //         // TODO: Also need to make sure to count the number of `\`
+    //         let innerText = stringText.substring(3, stringText.length - 3)
+    //         innerText = innerText.replaceAll(/(?<!\\)'/g, "'")
+    //         stringText = `'${innerText}'`
+    //     }
+    //     // TODO: Should be a byte type instead of a string if there is a `b` prefix
+    //     return stringText
+    // }
     /*
     strings: (fstring|string)+;
     */

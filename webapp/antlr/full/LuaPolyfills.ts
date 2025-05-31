@@ -270,6 +270,64 @@ end
 local Ellipsis = {}
 setmetatable(Ellipsis, { -- TODO: Add the methods
 })
+
+Complex = {}
+Complex.__index = Complex
+
+function Complex.new(re, im)
+    return setmetatable({re = re, im = im}, Complex)
+end
+
+function Complex.__add(a, b)
+    if type(a) == "number" then
+      a = Complex.new(a, 0)
+    end
+    if type(b) == "number" then
+      b = Complex.new(b,0)
+    end
+    return Complex.new(a.re + b.re, a.im + b.im)
+end
+
+function Complex.__sub(a, b)
+    if type(a) == "number" then
+      a = Complex.new(a, 0)
+    end
+    if type(b) == "number" then
+      b = Complex.new(b,0)
+    end
+    return Complex.new(a.re - b.re, a.im - b.im)
+end
+
+function Complex.__mul(a, b)
+    if type(a) == "number" then
+      return Complex.new(b.re * a, b.im * a)
+    end
+    if type(b) == "number" then
+      return Complex.new(a.re * b, a.im * b)
+    end
+    return Complex.new(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re)
+end
+
+function Complex.__eq(a, b)
+    if type(a) == "number" then
+        a = Complex.new(a, 0)
+    end
+    if type(b) == "number" then
+        b = Complex.new(b, 0)
+    end
+    return a.re == b.re and a.im == b.im
+end
+
+function Complex.__unm(c)
+    return Complex.new(-c.re, -c.im)
+end
+
+function Complex.__tostring(c)
+    if c.re == 0 then
+      return ("%gi"):format(c.im)
+    end
+    return ("(%g%+gi)"):format(c.re, c.im)
+end
 `
 
 // Global definitions that are supposed to be reachable in code
