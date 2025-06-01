@@ -278,6 +278,7 @@ class ScopeData {
 }
 
 export default class LuaPythonVisitor extends ParseTreeVisitor<string> implements PythonParserVisitor<string> {
+    public includePolyfill: boolean = true;
     public scopeStack: ScopeData[];
     public lastLoopIdentifier: number;
     public lastScopeIdentifier: number;
@@ -313,7 +314,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             let result = polyfills
             result += "\n-- Program content\n"
             const program = this.visit(statements)
-            result += this.scopeStack.at(-1)?.createScopeDefinitions() + '\n' // Inject scope definitions
+            if (this.includePolyfill) result += this.scopeStack.at(-1)?.createScopeDefinitions() + '\n' // Inject scope definitions
             result += program
             result += '\n\n' + this.scopeStack.at(-1)?.createExportDefinitions()
             return result

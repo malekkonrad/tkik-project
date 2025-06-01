@@ -52,7 +52,7 @@ const updateEditor = (document: Document, result: string) => {
 export default function Home() {
   const editorRef = React.useRef<editor.IStandaloneCodeEditor>(null)
 
-  const [isObfuscated, setObfuscated] = React.useState<boolean>(true)
+  const [includePolyfill, setIncludePolyfill] = React.useState<boolean>(true) // Include polyfill in the code
   const [showResult, setShowResult] = React.useState<boolean>(true) // Result code
   const [showCompiler, setShowCompiler] = React.useState<boolean>(true) // External lua compiler
   const [showDTree, setShowDTree] = React.useState<boolean>(false) // Tldraw tree
@@ -98,6 +98,7 @@ export default function Home() {
       if (visitorClass == null) return setResult("-- No visitor available")
 
       const luaVisitor = new visitorClass()
+      if ('includePolyfill' in luaVisitor) luaVisitor.includePolyfill = includePolyfill
       const res = luaVisitor.visit(tree)
       setResult((res != null) ? addHeader(code, res) : '-- No result')
     } catch (error: unknown) {
@@ -106,7 +107,7 @@ export default function Home() {
         console.warn(error.stack ?? 'No error trace')
       }
     }
-  }, [ code, version ])
+  }, [ code, version, includePolyfill ])
 
   React.useEffect(() => updateEditor(document, result), [ result, showCompiler ])
 
@@ -162,11 +163,11 @@ export default function Home() {
           <Box>
             <FormGroup>
               <FormControlLabel
-                label="Obfuscation"
+                label="Include polyfill"
                 control={
                   <Checkbox
-                    checked={isObfuscated}
-                    onChange={((e: React.ChangeEvent<HTMLInputElement>) => setObfuscated(e.target.checked))}
+                    checked={includePolyfill}
+                    onChange={((e: React.ChangeEvent<HTMLInputElement>) => setIncludePolyfill(e.target.checked))}
                   />
                 }
               />
@@ -209,66 +210,54 @@ export default function Home() {
             </FormGroup>
           </Box>
           <Box>
-          {
-            (isObfuscated) ? (
-              <>
-                {
-                  (showResult) ? (
-                    <SyntaxHighlighter
-                      language="lua"
-                      style={dark}
-                      showLineNumbers={true}
-                    >
-                      {result}
-                    </SyntaxHighlighter>
-                  ) : null
-                }
-                {
-                  (showDTree) ? (<TldrawSvg parseTree={dTree} />) : null
-                }
-                {
-                  (showTTree) ? (<Typography>{tTree}</Typography>) : null
-                }
-                {
-                  (showCompiler) ? (
-                    <>
-                      {/* Docs: https://onecompiler.com/apis/embed-editor */}
-                      <iframe
-                        frameBorder="0"
-                        height="450px"
-                        id='lua-result-editor'
-                        src={
-                          addURLParams('https://onecompiler.com/embed/lua', {
-                            hideLanguageSelection: 'true',
-                            hideNew: 'true',
-                            hideRun: 'false',
-                            hideNewFileOption: 'true',
-                            disableCopyPaste: 'false',
-                            disableAutoComplete: 'true',
-                            hideStdin: 'false',
-                            hideResult: 'false',
-                            hideTitle: 'true',
-                            theme: 'dark',
-                            listenToEvents: 'true',
-                            codeChangeEvent: 'true',
-                            hideEditorOptions: 'true'
-                          })
-                        }
-                        width="100%"
-                        onLoad={() => updateEditor(document, result)}
-                      />
-                    </>
-                  ) : null
-                }
-              </>
-            ) : (
-              <Image
-                alt="Troll face"
-                src="https://upload.wikimedia.org/wikipedia/en/7/73/Trollface.png"
-                layout="responsive"
-              />
-            )
-          }
+            {
+              (showResult) ? (
+                <SyntaxHighlighter
+                  language="lua"
+                  style={dark}
+                  showLineNumbers={true}
+                >
+                  {result}
+                </SyntaxHighlighter>
+              ) : null
+            }
+            {
+              (showDTree) ? (<TldrawSvg parseTree={dTree} />) : null
+            }
+            {
+              (showTTree) ? (<Typography>{tTree}</Typography>) : null
+            }
+            {
+              (showCompiler) ? (
+                <>
+                  {/* Docs: https://onecompiler.com/apis/embed-editor */}
+                  <iframe
+                    frameBorder="0"
+                    height="450px"
+                    id='lua-result-editor'
+                    src={
+                      addURLParams('https://onecompiler.com/embed/lua', {
+                        hideLanguageSelection: 'true',
+                        hideNew: 'true',
+                        hideRun: 'false',
+                        hideNewFileOption: 'true',
+                        disableCopyPaste: 'false',
+                        disableAutoComplete: 'true',
+                        hideStdin: 'false',
+                        hideResult: 'false',
+                        hideTitle: 'true',
+                        theme: 'dark',
+                        listenToEvents: 'true',
+                        codeChangeEvent: 'true',
+                        hideEditorOptions: 'true'
+                      })
+                    }
+                    width="100%"
+                    onLoad={() => updateEditor(document, result)}
+                  />
+                </>
+              ) : null
+            }
           </Box>
         </Grid>
       </Grid>

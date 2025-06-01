@@ -12,7 +12,7 @@ print("Ka", "mil!", sep='')
 
 def zapytaj():
     print("")
-  print(f"Miło cię poznać {input("A ty jak masz na imię?")}")
+    print(f"Miło cię poznać {input("A ty jak masz na imię?")}")
 zapytaj()
 
 def sporty(pierwszy='basen', /, *jakie, ulubiony):

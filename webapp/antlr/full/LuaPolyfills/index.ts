@@ -1,3 +1,150 @@
+// TODO: __globals__
+// __doc__
+// __name__
+// __qualname__
+// __module__
+// __defaults__
+// __dict__
+// __kwdefaults__
+
+// TODO: Methods!!!
+// __self__ - instance if method is bound
+// __func__ - original function object
+// __doc__ = method.__func__.__doc__
+// __name__ = method.__func__.__name__
+// __module__ = name of the module
+
+/*
+
+__new__
+__init__
+__del__
+__repr__
+__str__
+__bytes__
+__format__(self, format_spec)
+object.__lt__(self, other)
+object.__le__(self, other)
+object.__eq__(self, other) default = is
+object.__ne__(self, other) default = !eq if not NotImplemented
+// If the operands are of different types, and the right operand’s type is a direct or indirect subclass of the left operand’s type, the reflected method of the right operand has priority, otherwise the left operand’s method has priority. Virtual subclassing is not considered.
+object.__gt__(self, other)
+object.__ge__(self, other)
+__hash__
+__bool__ (if not defined, __len__) or true
+
+// __getattribute__ (calls __get__)
+// __getattr__
+// __setattr__
+// __delattr__
+// __dir__
+
+// __get__ __set__ __delete__
+// __slots__
+// __class__
+// __init_subclass__ 
+// __set_name__
+// type(object) => object.__class__
+// type(name, bases, dict, **kwds)
+// __mro_entries__
+// metaclass
+
+MRO entries are resolved;
+
+the appropriate metaclass is determined;
+
+the class namespace is prepared;
+
+the class body is executed;
+
+the class object is created.
+metaclass.__prepare__  (should be a classmethod)
+metaclass(name, bases, namespace, **kwds)
+__instancecheck__
+__subclasscheck__
+hasattr
+getattr
+delattr
+setattr
+
+__call__
+__len__
+__length_hint__
+__getitem__
+__setitem__
+__delitem__
+__missing__
+__iter__
+__reversed__
+__contains__
+object.__add__(self, other)
+object.__sub__(self, other)
+object.__mul__(self, other)
+object.__matmul__(self, other)
+object.__truediv__(self, other)
+object.__floordiv__(self, other)
+object.__mod__(self, other)
+object.__divmod__(self, other)
+object.__pow__(self, other[, modulo])
+object.__lshift__(self, other)
+object.__rshift__(self, other)
+object.__and__(self, other)
+object.__xor__(self, other)
+object.__or__(self, other)
+object.__radd__(self, other)
+object.__rsub__(self, other)
+object.__rmul__(self, other)
+object.__rmatmul__(self, other)
+object.__rtruediv__(self, other)
+object.__rfloordiv__(self, other)
+object.__rmod__(self, other)
+object.__rdivmod__(self, other)
+object.__rpow__(self, other[, modulo])
+object.__rlshift__(self, other)
+object.__rrshift__(self, other)
+object.__rand__(self, other)
+object.__rxor__(self, other)
+object.__ror__(self, other)
+object.__iadd__(self, other)
+object.__isub__(self, other)
+object.__imul__(self, other)
+object.__imatmul__(self, other)
+object.__itruediv__(self, other)
+object.__ifloordiv__(self, other)
+object.__imod__(self, other)
+object.__ipow__(self, other[, modulo])
+object.__ilshift__(self, other)
+object.__irshift__(self, other)
+object.__iand__(self, other)
+object.__ixor__(self, other)
+object.__ior__(self, other)
+object.__neg__(self)
+object.__pos__(self)
+object.__abs__(self)
+object.__invert__(self)
+object.__complex__(self)
+object.__int__(self)
+object.__float__(self)
+object.__index__(self)
+object.__round__(self[, ndigits])
+object.__trunc__(self)
+object.__floor__(self)
+object.__ceil__(self)
+__enter__
+__exit__
+__match_args__ - tuple of fstrings
+
+__match_args__
+coroutine.send
+coroutine.throw
+coroutine.close
+
+__aiter__
+__anext__
+__aenter__
+__aexit__
+*/
+
 const polyfills = `-- Lua Polyfills
 -- CUSTOM FUNCTIONS
 local org_print = print
@@ -12,6 +159,7 @@ local getOrErr = function (name, str_name, isLocal) -- DEVIATION: Unfortunately 
 end
 
 function shortHandIf(a, b, c) if a then return b end return end
+-- NOTE: TODO: In python unpack bases on iter
 
 function tableMerge(...)
     local target = {}
@@ -128,6 +276,48 @@ local defFunction = function (func, argsData, has_largs, has_kwargs)
     end
 end
 
+local defClass = function (f, bases)
+    local c = {}
+    
+    for _, base in ipairs(bases) do
+        for k, v in pairs(base) do
+            c[k] = v
+        end
+    end
+
+    c._bases = bases
+    
+    c = class_init(c)
+    
+    local mt = getmetatable(c) or {}
+    mt.__call = function(_, ...)
+        local object = {}
+        
+        setmetatable(object, {
+            __index = function(tbl, idx)
+                local method = c[idx]
+                if type(method) == "function" then
+                    return function(...)
+                        return c[idx](object, ...) 
+                    end
+                end
+                
+                return method
+            end,
+        })
+    
+        if type(object.__init__) == "function" then
+            object.__init__(...)
+        end
+        
+        return object
+    end
+    
+    setmetatable(c, mt)
+    
+    return c
+end
+
 local cunpack = function (left, right, ...) -- if right ~= nil, then we expect there is *args between left & right (and right can be eventually equal to 0)
     local rargs = {}
     local pargs = table.pack(...)
@@ -143,9 +333,35 @@ end
 
 local in_operator = function (a, b) return a.__contains__(b) end
 local is_operator = function (a, b) return a == b end
+local check_bool = function(obj)
+    if obj ~= nil then
+        if obj.__bool__ ~= nil then return obj.__bool__() end
+        if obj.__len__ ~= nil then return obj.__len__() ~= 0 end
+        return true
+    end
+    return false
+end
 
 local rawCall = defFunction(function (objects, func) return func(table.unpack(objects, 1, objects.n)) end, { { Name = "func" } }, true, false)
 local custCall = function (func, ...) return func(table.pack(...), {}) end
+
+-- PYTHON FUNCTIONS
+-- https ://docs.python.org/3/library/functions.html
+local abs = defFunction(function (x) return x.__abs__() end, { { Name = "x" } }, false, false)
+local aiter = defFunction(function (async_iterable) error("TODO") end, { { Name = "async_iterable" } }, false, false)
+local all = defFunction(function (iterable) error("TODO") end, { { Name = "iterable" } }, false, false)
+local anext = defFunction(function (iterable, default) error("TODO") end, { { Name = "iterable" }, { Default = None, Name = "default" } }, false, false)
+local any = defFunction(function (iterable) error("TODO") end, { { Name = "iterable" } }, false, false)
+local ascii = defFunction(function (object) error("TODO") end, { { Name = "object" } }, false, false)
+
+local bin = defFunction(function (x) error("TODO") end, { { Name = "x" } }, false, false)
+local boolConv = defFunction(function (object) error("TODO") end, { { Default = false, Name = "object", OnlyPositional = true } }, false, false)
+-- bytes
+
+local callable = defFunction(function (object) return object.__call__ ~= nil end, { { Name = "object" } }, false, false)
+local chr = defFunction(function (i) error("TODO") end, { { Name = "i" } }, false, false)
+-- classmethod
+-- complex
 
 local print = defFunction(function (objects, sep, endl)
     local res = {}
@@ -155,9 +371,7 @@ local print = defFunction(function (objects, sep, endl)
     io.write(table.concat(res, sep) .. endl)
 end, { { Default = ' ', Name = "sep", OnlyNamed = true }, { Default = '\\n', Name = "end", OnlyNamed = true } }, true, false)
 
-local len = defFunction(function (s)
-    return #s
-end, { { Name = "s" } }, false, false)
+
 
 local input = defFunction(function (prompt)
     print(tableMerge({prompt}), objectMerge({ ['end'] = '' }))
@@ -271,6 +485,81 @@ local Ellipsis = {}
 setmetatable(Ellipsis, { -- TODO: Add the methods
 })
 
+-- TODO: bool derives int
+
+--[[
+classmethod()
+complex()
+
+delattr()
+dict()
+dir()
+divmod()
+
+enumerate()
+eval()
+exec()
+
+filter()
+float()
+format()
+frozenset()
+
+getattr()
+globals()
+
+hasattr()
+hash()
+help()
+hex()
+
+id()
+int()
+isinstance()
+issubclass()
+iter()
+len()
+list()
+locals()
+
+map()
+max()
+min()
+
+next()
+
+object()
+oct()
+open()
+ord()
+
+pow()
+property()
+
+range()
+repr()
+reversed()
+round()
+
+set()
+setattr()
+slice()
+sorted()
+staticmethod()
+str()
+sum()
+super()
+
+tuple()
+type()
+
+vars()
+
+zip()
+
+__import__()
+]]
+
 Complex = {}
 Complex.__index = Complex
 
@@ -332,6 +621,17 @@ end
 
 // Global definitions that are supposed to be reachable in code
 export const globalDefinitions: { [Name: string]: string } = {
+    ["abs"]: 'abs',
+    ["aiter"]: 'aiter',
+    ["all"]: 'all',
+    ["anext"]: 'anext',
+    ["any"]: 'any',
+    ["ascii"]: 'ascii',
+    ["bin"]: 'bin',
+    // bool
+    ["bytes"]: 'bytes',
+    ["callable"]: 'callable',
+    ["chr"]: 'chr',
     ["print"]: 'print',
     ["len"]: 'len',
     ["input"]: 'input',
