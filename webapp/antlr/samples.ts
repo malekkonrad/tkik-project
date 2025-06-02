@@ -25,6 +25,68 @@ sporty("boks", "narty", ulubiony="football")
 `
   },
   {
+    name: "Variables",
+    src: `
+a = 155
+b = 3
+
+a, b = b, a
+
+c = a * b
+d = c / (b * 6)
+
+print(a)
+print(b)
+print(c)
+print(d)
+
+a = 11
+a = -a
+b = +a
+c = ~a
+
+boo = True
+nboo = not boo
+
+print(a, b, c)
+print(boo, nboo)
+
+i = 10
+j = 5
+while i > 0:
+    print(i)
+    i = i - 1
+    test = 3434
+
+test = 56
+
+def fact(n):
+    return 1 if n == 0 else n * fact(n - 1)
+print(fact(10))
+
+class Foo:
+    def __init__(self):
+        self.cls_var = 45
+        localvar = 56
+`
+  },
+  {
+    name: "Classes",
+    src: `
+class Foo:
+    class Bar:
+        def __init__(self):
+            print("__init__ from Bar")
+    
+    def __init__(self):
+        print("__init__ from Foo")
+        Foo.Bar()
+
+Foo()
+Foo.Bar()
+`
+  },
+  {
     name: "Pythonese Brainrot",
     src: `
 try:

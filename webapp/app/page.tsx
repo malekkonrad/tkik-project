@@ -1,6 +1,4 @@
 "use client";
-import Image from "next/image";
-
 import Editor from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
 
