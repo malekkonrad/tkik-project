@@ -10,12 +10,14 @@ export default class LuaPythonParserErrorListener extends ErrorListener<Token> {
     msg: string, 
     err: RecognitionException | undefined): 
     void {
-      console.log("Parser",recognizer, offendingSymbol, line, column, msg, err) 
+      console.log("Parser",recognizer, offendingSymbol, line, column, msg, err); 
+      
       let errorLine = "Unknown line";
-      recognizer as PythonParser; 
+      var parser = recognizer as PythonParser; 
 
+      console.log("Parser", parser);
       // ? - chyba nie potrzebne
-      var ctx = (recognizer as PythonParser).pattern_capture_target();
+      // var ctx = (recognizer as PythonParser).pattern_capture_target();
       
       if (offendingSymbol && offendingSymbol.getInputStream()) {
       const inputStream = offendingSymbol.getInputStream();
@@ -27,8 +29,8 @@ export default class LuaPythonParserErrorListener extends ErrorListener<Token> {
         }
       }
 
-      var string_mess = 'Parser Error at line:\n--' + errorLine + '\n--' +
-      ' '.repeat(column) + '^' + '\n' + "--SyntaxError: " + msg;
+      var string_mess = ' Parser Error at line: '+ line+ '\n-- ' + errorLine + '\n-- ' +
+      ' '.repeat(column) + '^' + '\n' + "-- SyntaxError: " + msg;
 
       throw new Error(string_mess);
     }

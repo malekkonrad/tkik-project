@@ -22,10 +22,10 @@ export default class LuaPythonLexerErrorListener extends ErrorListener<number> {
               errorLine = lines[line - 1]; 
             }
           }
-          var string_mess = 'Lexer Error at line:\n--' + errorLine + '\n--' +
-          ' '.repeat(column) + '^' + '\n' + "--" + msg;
+          var string_mess = ' Lexer Error at line: '+ line+ '\n-- ' + errorLine + '\n-- ' +
+          ' '.repeat(column) + '^' + '\n' + "-- " + msg;
           if (rule_name != "Unknown Rule"){
-            string_mess += '\n--Rule: ' + rule_name;
+            string_mess += '\n-- Rule: ' + rule_name;
           }
           
           throw new Error(string_mess);
