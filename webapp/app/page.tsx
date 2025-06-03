@@ -26,7 +26,7 @@ const addURLParams = (url: string, params: { [Param: string]: string }) => {
   return u.toString()
 }
 
-const addLuaComments = (txt) => txt.trim().split('\n').map(x => `-- {x}`).join('\n')
+const addLuaComments = (txt: string) => txt.trim().split('\n').map(x => `-- ${x}`).join('\n')
 const addHeader = (src: string, res: string) => {
   const srcHash = CryptoJS.SHA256(src).toString(CryptoJS.enc.Hex);
   return `-- PyToL\n-- Generated on: ${new Date().toISOString()}\n-- Source hash: ${srcHash}\n${res}`
@@ -161,7 +161,7 @@ export default function Home() {
                 </Alert>
               ) : undefined
             }
-
+            <br />
             <Editor
               height="90vh"
               defaultLanguage="python"
