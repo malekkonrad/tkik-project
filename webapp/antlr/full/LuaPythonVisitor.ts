@@ -277,6 +277,7 @@ class ScopeData {
     }
 }
 
+// Default Visitor
 export default class LuaPythonVisitor extends ParseTreeVisitor<string> implements PythonParserVisitor<string> {
     public includePolyfill: boolean = true;
     public scopeStack: ScopeData[];

@@ -1,5 +1,4 @@
 import { ErrorListener, Token, RecognitionException, Recognizer} from 'antlr4'
-import PythonParser from './PythonParser';
 
 export default class LuaPythonParserErrorListener extends ErrorListener<Token> {
 
@@ -8,16 +7,9 @@ export default class LuaPythonParserErrorListener extends ErrorListener<Token> {
     line: number, 
     column: number, 
     msg: string, 
-    err: RecognitionException | undefined): 
+    err: RecognitionException | undefined): // eslint-disable-line @typescript-eslint/no-unused-vars
     void {
-      console.log("Parser",recognizer, offendingSymbol, line, column, msg, err); 
-      
       let errorLine = "Unknown line";
-      var parser = recognizer as PythonParser; 
-
-      console.log("Parser", parser);
-      // ? - chyba nie potrzebne
-      // var ctx = (recognizer as PythonParser).pattern_capture_target();
       
       if (offendingSymbol && offendingSymbol.getInputStream()) {
       const inputStream = offendingSymbol.getInputStream();
@@ -29,8 +21,10 @@ export default class LuaPythonParserErrorListener extends ErrorListener<Token> {
         }
       }
 
-      var string_mess = ' Parser Error at line: '+ line+ '\n-- ' + errorLine + '\n-- ' +
-      ' '.repeat(column) + '^' + '\n' + "-- SyntaxError: " + msg;
+      const string_mess = 'Parser Error at line: ' + line + '\n'
+        + errorLine + '\n'
+        + ' '.repeat(column) + '^' + '\n'
+        + "PyToL_SyntaxError: " + msg;
 
       throw new Error(string_mess);
     }

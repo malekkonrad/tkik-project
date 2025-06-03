@@ -7,7 +7,7 @@ import * as React from 'react';
 import Select, { SelectChangeEvent } from '@mui/material/Select'
 import Checkbox from '@mui/material/Checkbox';
 import MenuItem from '@mui/material/MenuItem'
-import { Typography, Box, FormControlLabel, FormGroup, FormControl, InputLabel, Grid } from '@mui/material';
+import { Typography, Box, FormControlLabel, FormGroup, FormControl, InputLabel, Grid, Alert } from '@mui/material';
 
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -26,6 +26,7 @@ const addURLParams = (url: string, params: { [Param: string]: string }) => {
   return u.toString()
 }
 
+const addLuaComments = (txt) => txt.trim().split('\n').map(x => `-- {x}`).join('\n')
 const addHeader = (src: string, res: string) => {
   const srcHash = CryptoJS.SHA256(src).toString(CryptoJS.enc.Hex);
   return `-- PyToL\n-- Generated on: ${new Date().toISOString()}\n-- Source hash: ${srcHash}\n${res}`
@@ -59,6 +60,7 @@ export default function Home() {
   const [code, setCode] = React.useState<string>('')
   const [version, setVersion] = React.useState<string>('full')
   const [result, setResult] = React.useState<string>('')
+  const [error, setError] = React.useState<string | null>(null)
   const [dTree, setDTree] = React.useState<ParserRuleContext | null>(null)
   const [tTree, setTTree] = React.useState<string | null>(null)
   const [sampleName, setSampleName] = React.useState<string>('None')
@@ -72,18 +74,18 @@ export default function Home() {
   React.useEffect(() => {
     try {
       const compilerData: CompilerSet = compilers[version]
-      if (compilerData == null) return setResult("-- No compiler found :(")
+      if (compilerData == null) throw new Error("No compiler found.")
 
       const {lexer: lexerClass, parser: parserClass, visitor: visitorClass} = compilerData
 
       const chars = new CharStream(code);
-      if (lexerClass == null) return setResult("-- No lexer available")
+      if (lexerClass == null) throw new Error("No lexer available.")
       const lexer = new lexerClass(chars);
       lexer.removeErrorListeners()
       if (compilerData.lexerErrorListener != null) lexer.addErrorListener(new compilerData.lexerErrorListener())
 
       const tokens = new CommonTokenStream(lexer);
-      if (parserClass == null) return setResult("-- No parser available")
+      if (parserClass == null) throw new Error("No parser available.")
       const parser = new (parserClass as any)(tokens); // eslint-disable-line
       parser.buildParseTrees = true
       parser.removeErrorListeners()
@@ -93,15 +95,19 @@ export default function Home() {
       setDTree(tree)
       setTTree(tree.toStringTree(parser.ruleNames))
 
-      if (visitorClass == null) return setResult("-- No visitor available")
+      if (visitorClass == null) throw new Error("No visitor available.")
 
       const luaVisitor = new visitorClass()
       if ('includePolyfill' in luaVisitor) luaVisitor.includePolyfill = includePolyfill
       const res = luaVisitor.visit(tree)
+      setError(null)
       setResult((res != null) ? addHeader(code, res) : '-- No result')
     } catch (error: unknown) {
       if (error instanceof Error) {
-        setResult(`-- Failed to parse :(\n--${error.message}`)
+        let errTxt = 'Failed to parse\n'
+        errTxt += error.message
+        setError(errTxt)
+        setResult(addLuaComments(errTxt))
         console.warn(error.stack ?? 'No error trace')
       }
     }
@@ -148,6 +154,14 @@ export default function Home() {
             </FormControl>
           </Box>
           <Box>
+            {
+              (error != null) ? (
+                <Alert severity='error'>
+                  {error}
+                </Alert>
+              ) : undefined
+            }
+
             <Editor
               height="90vh"
               defaultLanguage="python"
