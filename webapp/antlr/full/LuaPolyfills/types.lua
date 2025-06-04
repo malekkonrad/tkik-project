@@ -1,7 +1,9 @@
 -- CUSTOM FUNCTIONS
 local org_print = print
 local typeClass = {}
+typeClass.class = typeClass
 local dictClass = {}
+dictClass.class = typeClass
 
 -- LUA Polyfills
 function tableFind(t, val)
@@ -24,18 +26,36 @@ Object {
     numberdata
 }
 ]]
-local int_createobject = function (typeClass, createDict) -- Creates a blank object
-    local obj = { class = typeClass }
+local int_createobject = function (tClass, createDict) -- Creates a blank object
+    local obj = { class = tClass }
     if createDict then
         obj.dref = int_createobject(dictClass, false) -- Dict contains no dict
     end
     return obj
 end
 -- None
-local noneClass = int_createobject(typeClass)
-local None = int_createobject(noneClass)
+local noneClass = int_createobject(typeClass, true)
+local None = int_createobject(noneClass, false)
+-- TODO: Add staticmethod
+noneClass.dref.dictdata['__new__'] = defFunction(function (cls)
+    return None
+end, { { Name = 'cls' } }, false, false)
+noneClass.dref.dictdata['__bool__'] = defFunction(function (self)
+    return False
+end, { { Name = 'self' } }, false, false)
+-- noneClass.dref.dictdata['__new__'] -- I suppose None should be static
+-- noneClass.dref.dictdata['__repr__']
+-- noneClass.dref.dictdata['__hash__']
+-- noneClass.dref.dictdata['__eq__']
+-- noneClass.dref.dictdata['__ne__']
+-- noneClass.dref.dictdata['__doc__']
+-- noneClass.dref.dictdata['__le__']
+-- noneClass.dref.dictdata['__lt__']
+-- noneClass.dref.dictdata['__gt__']
+-- noneClass.dref.dictdata['__ge__']
+
 -- Int
-local intClass = int_createobject(typeClass)
+local intClass = int_createobject(typeClass, true)
 
 -- Bool
 local boolClass = int_createobject(intClass)
