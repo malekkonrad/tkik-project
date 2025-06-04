@@ -312,12 +312,13 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     visitProgram(ctx: ProgramContext): string {
         const statements = ctx.statements()
         if (statements != null) {
-            let result = polyfills
+            let result = (this.includePolyfill) ? polyfills : ''
             result += "\n-- Program content\n"
             const program = this.visit(statements)
-            if (this.includePolyfill) result += this.scopeStack.at(-1)?.createScopeDefinitions() + '\n' // Inject scope definitions
+            result += this.scopeStack.at(-1)?.createScopeDefinitions() + '\n' // Inject scope definitions
             result += program
-            result += '\n\n' + this.scopeStack.at(-1)?.createExportDefinitions()
+            // TODO: Export definitions should be redone
+            // result += '\n\n' + this.scopeStack.at(-1)?.createExportDefinitions()
             return result
         }
         return ''
