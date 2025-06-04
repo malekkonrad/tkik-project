@@ -1,6 +1,7 @@
 -- CUSTOM FUNCTIONS
 local org_print = print
-local noneClass, dictClass
+local typeClass = {}
+local dictClass = {}
 
 -- LUA Polyfills
 function tableFind(t, val)
@@ -12,14 +13,55 @@ function tableFind(t, val)
     return nil
 end
 
+--[[
+Object {
+    fref: Optional<function>,
+    dref: Object[Dict],
+    class: Object,
+
+    dictdata,
+    stringdata,
+    numberdata
+}
+]]
+local int_createobject = function (typeClass, createDict) -- Creates a blank object
+    local obj = { class = typeClass }
+    if createDict then
+        obj.dref = int_createobject(dictClass, false) -- Dict contains no dict
+    end
+    return obj
+end
+-- None
+local noneClass = int_createobject(typeClass)
+local None = int_createobject(noneClass)
+-- Int
+local intClass = int_createobject(typeClass)
+
+-- Bool
+local boolClass = int_createobject(intClass)
+local True = int_createobject(boolClass)
+True.numberdata = 1
+local False = int_createobject(boolClass)
+False.numberdata = 0
+
+-- String
+local strClass = int_createobject(typeClass)
+
+-- Exception
+local baseexceptionClass = int_createobject(typeClass)
+
 -- Internal operators
 local int_directcall = function (fobj, ...)
-    local fref = fobj.fref
-    return fref(...)
+    return fobj.fref(...)
 end
 
-local int_type = function (obj)
-    return obj.oref.dictdata.__class__
+local int_getattribute_implicit
+local int_custcall = function (obj, ...)
+    local call = int_getattribute_implicit(obj.class, '__call__')
+    while call.fref == nil do
+        call = int_getattribute_implicit(call.class, '__call__')
+    end
+    return int_directcall(call, table.pack(...), {}) -- selene: allow(incorrect_library_use)
 end
 
 local int_getrawstring = function (obj)
@@ -41,9 +83,9 @@ end
 
 local int_getattribute_implicit
 local int_custcall = function (obj, ...)
-    local call = int_getattribute_implicit(int_type(obj), '__call__')
+    local call = int_getattribute_implicit(obj.class, '__call__')
     while call.fref == nil do
-        call = int_getattribute_implicit(int_type(obj), '__call__')
+        call = int_getattribute_implicit(call.class, '__call__')
     end
     return int_directcall(call, table.pack(...), {}) -- selene: allow(incorrect_library_use)
 end
@@ -74,6 +116,8 @@ int_getattribute_implicit = function (t, attr)
         ct = ct.oref.dictdata.__base__
     end
 end
+
+local functionClass = {
 
 --[[
   local attr = int_type(a).__getattribute__(b)
