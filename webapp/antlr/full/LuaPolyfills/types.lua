@@ -4,6 +4,7 @@ local typeClass = {}
 typeClass.class = typeClass
 local dictClass = {}
 dictClass.class = typeClass
+local int_properbool
 
 -- LUA Polyfills
 function tableFind(t, val)
@@ -33,8 +34,13 @@ local int_createobject = function (tClass, createDict) -- Creates a blank object
     end
     return obj
 end
+local objectClass = int_createobject(tClass, false)
+typeClass.base = objectClass
+dictClass.base = objectClass
+
 -- None
 local noneClass = int_createobject(typeClass, true)
+noneClass.base = objectClass
 local None = int_createobject(noneClass, false)
 -- TODO: Add staticmethod
 noneClass.dref.dictdata['__new__'] = defFunction(function (cls)
@@ -56,19 +62,196 @@ end, { { Name = 'self' } }, false, false)
 
 -- Int
 local intClass = int_createobject(typeClass, true)
+intClass.base = objectClass
+intClass.dref.dictdata['__init__'] = defFunction(function (self, data, base)
+    if type(data) == 'number' then
+        self.numberdata = data
+    else
+        self.numberdata = 0
+    end
+end, { { Name = "self", OnlyPositional = true }, { Name = "data", OnlyPositional = true, Default = None }, { Name = "base", Default = None } }, false, false)
+intClass.dref.dictdata['__mul__'] = defFunction(function (self, other)
+    local newnum = int_custcall(self.class)
+    newnum.numberdata = self.numberdata * other.numberdata
+    -- TODO: Should add complex
+    return newnum
+end, { { Name = 'self' }, { Name = 'other' } }, false, false)
+intClass.dref.dictdata['__rmul__'] = defFunction(function (self, other)
+    local newnum = int_custcall(self.class)
+    newnum.numberdata = self.numberdata * other.numberdata
+    -- TODO: Should add complex
+    return newnum
+end, { { Name = 'self' }, { Name = 'other' } }, false, false)
+intClass.dref.dictdata['__bool__'] = defFunction(function (self, other)
+    return int_properbool(self.numberdata ~= 0)
+end, { { Name = 'self' }, { Name = 'other' } }, false, false)
+intClass.dref.dictdata['__add__'] = defFunction(function (self, other)
+    local newnum = int_custcall(self.class)
+    newnum.numberdata = self.numberdata + other.numberdata
+    -- TODO: Should add complex
+    return newnum
+end, { { Name = 'self' }, { Name = 'other' } }, false, false)
+intClass.dref.dictdata['__radd__'] = defFunction(function (self, other)
+    local newnum = int_custcall(self.class)
+    newnum.numberdata = self.numberdata + other.numberdata
+    -- TODO: Should add complex
+    return newnum
+end, { { Name = 'self' }, { Name = 'other' } }, false, false)
+intClass.dref.dictdata['__sub__'] = defFunction(function (self, other)
+    local newnum = int_custcall(self.class)
+    newnum.numberdata = self.numberdata - other.numberdata
+    -- TODO: Should add complex
+    return newnum
+end, { { Name = 'self' }, { Name = 'other' } }, false, false)
+intClass.dref.dictdata['__rsub__'] = defFunction(function (self, other)
+    local newnum = int_custcall(self.class)
+    newnum.numberdata = other.numberdata - self.numberdata
+    -- TODO: Should add complex
+    return newnum
+end, { { Name = 'self' }, { Name = 'other' } }, false, false)
+intClass.dref.dictdata['__lshift__'] = defFunction(function (self, other)
+    local newnum = int_custcall(self.class)
+    newnum.numberdata = self.numberdata << other.numberdata
+    -- TODO: Should add complex
+    return newnum
+end, { { Name = 'self' }, { Name = 'other' } }, false, false)
+intClass.dref.dictdata['__rlshift__'] = defFunction(function (self, other)
+    local newnum = int_custcall(self.class)
+    newnum.numberdata = other.numberdata << self.numberdata
+    -- TODO: Should add complex
+    return newnum
+end, { { Name = 'self' }, { Name = 'other' } }, false, false)
+intClass.dref.dictdata['__xor__'] = defFunction(function (self, other)
+    local newnum = int_custcall(self.class)
+    newnum.numberdata = self.numberdata ~ other.numberdata
+    -- TODO: Should add complex
+    return newnum
+end, { { Name = 'self' }, { Name = 'other' } }, false, false)
+intClass.dref.dictdata['__rxor__'] = defFunction(function (self, other)
+    local newnum = int_custcall(self.class)
+    newnum.numberdata = other.numberdata ~ self.numberdata
+    -- TODO: Should add complex
+    return newnum
+end, { { Name = 'self' }, { Name = 'other' } }, false, false)
+-- intClass.dref.dictdata['__index__'] 
+-- intClass.dref.dictdata['conjugate'] 
+-- intClass.dref.dictdata['__truediv__'] 
+-- intClass.dref.dictdata['bit_length'] 
+-- intClass.dref.dictdata['__int__'] 
+-- intClass.dref.dictdata['from_bytes'] 
+-- intClass.dref.dictdata['__abs__'] 
+-- intClass.dref.dictdata['__ceil__'] 
+-- intClass.dref.dictdata['__invert__'] 
+-- intClass.dref.dictdata['__floordiv__'] 
+-- intClass.dref.dictdata['to_bytes'] 
+-- intClass.dref.dictdata['__getnewargs__'] 
+-- intClass.dref.dictdata['bit_count'] 
+intClass.dref.dictdata['__or__'] = defFunction(function (self, other)
+    if int_operator_truth(self) then return self end
+    return other
+end, { { Name = 'self' }, { Name = 'other'} }, false, false)
+intClass.dref.dictdata['__ror__'] = defFunction(function (self, other)
+    if int_operator_truth(other) then return other end
+    return self
+end, { { Name = 'self' }, { Name = 'other'} }, false, false)
+intClass.dref.dictdata['__and__'] = defFunction(function (self, other)
+    if not int_operator_truth(self) then return self end
+    return other
+end, { { Name = 'self' }, { Name = 'other'} }, false, false)
+intClass.dref.dictdata['__rand__'] = defFunction(function (self, other)
+    if not int_operator_truth(other) then return other end
+    return self
+end, { { Name = 'self' }, { Name = 'other'} }, false, false)
+-- intClass.dref.dictdata['as_integer_ratio'] 
+-- intClass.dref.dictdata['__float__'] 
+-- intClass.dref.dictdata['__rtruediv__'] 
+-- intClass.dref.dictdata['__floor__'] 
+-- intClass.dref.dictdata['__rfloordiv__'] 
+-- intClass.dref.dictdata['__divmod__'] 
+-- intClass.dref.dictdata['__rpow__'] 
+-- intClass.dref.dictdata['__rshift__'] 
+-- intClass.dref.dictdata['__trunc__'] 
+-- intClass.dref.dictdata['__mod__'] 
+-- intClass.dref.dictdata['__pow__'] 
+-- intClass.dref.dictdata['real'] 
+-- intClass.dref.dictdata['__rdivmod__'] 
+-- intClass.dref.dictdata['numerator'] 
+-- intClass.dref.dictdata['__rrshift__'] 
+-- intClass.dref.dictdata['denominator'] 
+-- intClass.dref.dictdata['imag'] 
+intClass.dref.dictdata['__pos__'] = defFunction(function (self)
+    local newnum = int_custcall(self.class)
+    newnum.numberdata = self.numberdata
+    -- TODO: Should add complex
+    return newnum
+end, { { Name = 'self' } }, false, false)
+intClass.dref.dictdata['__neg__'] = defFunction(function (self)
+    local newnum = int_custcall(self.class)
+    newnum.numberdata = -self.numberdata
+    -- TODO: Should add complex
+    return newnum
+end, { { Name = 'self' } }, false, false)
+intClass.dref.dictdata['is_integer'] = defFunction(function (self)
+    return int_properbool(self.numberdata % 1 == 0)
+end, { { Name = 'self' } }, false, false)
+-- intClass.dref.dictdata['__rmod__'] 
+-- intClass.dref.dictdata['__round__'] 
+-- intClass.dref.dictdata['__doc__'] 
+-- intClass.dref.dictdata['__sizeof__'] 
+-- intClass.dref.dictdata['__format__']
+intClass.dref.dictdata['__ge__'] = defFunction(function (self, other)
+    return int_properbool(self.numberdata > other.numberdata)
+end, { { Name = 'self' }, { Name = 'other'} }, false, false)
+intClass.dref.dictdata['__gt__'] = defFunction(function (self, other)
+    return int_properbool(self.numberdata >= other.numberdata)
+end, { { Name = 'self' }, { Name = 'other'} }, false, false)
+intClass.dref.dictdata['__le__'] = defFunction(function (self, other)
+    return int_properbool(self.numberdata < other.numberdata)
+end, { { Name = 'self' }, { Name = 'other'} }, false, false)
+intClass.dref.dictdata['__lt__'] = defFunction(function (self, other)
+    return int_properbool(self.numberdata <= other.numberdata)
+end, { { Name = 'self' }, { Name = 'other'} }, false, false)
+intClass.dref.dictdata['__eq__'] = defFunction(function (self, other)
+    return int_properbool(self.numberdata == other.numberdata)
+end, { { Name = 'self' }, { Name = 'other'} }, false, false)
+intClass.dref.dictdata['__ne__'] = defFunction(function (self, other)
+    return int_properbool(self.numberdata ~= other.numberdata)
+end, { { Name = 'self' }, { Name = 'other'} }, false, false)
+-- intClass.dref.dictdata['__getattribute__']
+-- intClass.dref.dictdata['__hash__']
+-- intClass.dref.dictdata['__repr__']
+-- intClass.dref.dictdata['__new__']
 
 -- Bool
 local boolClass = int_createobject(intClass)
+boolClass.base = intClass
 local True = int_createobject(boolClass)
 True.numberdata = 1
 local False = int_createobject(boolClass)
 False.numberdata = 0
+int_properbool = function (v) if v then return True else return False end end
+
+boolClass.dref.dictdata['__new__'] = defFunction(function (self, data)
+    if int_operator_truth(data) then return True end
+    return False
+end, { { Name = 'self' }, { Name = 'data', Default = None } }, false, false)
+-- boolClass.dref.dictdata['__repr__']
+-- boolClass.dref.dictdata['__invert__']
+-- boolClass.dref.dictdata['__and__']
+-- boolClass.dref.dictdata['__rand__']
+-- boolClass.dref.dictdata['__xor__']
+-- boolClass.dref.dictdata['__rxor__']
+-- boolClass.dref.dictdata['__or__']
+-- boolClass.dref.dictdata['__ror__']
+-- boolClass.dref.dictdata['__doc__']
 
 -- String
 local strClass = int_createobject(typeClass)
+strClass.base = objectClass
 
 -- Exception
 local baseexceptionClass = int_createobject(typeClass)
+baseexceptionClass.base = objectClass
 
 -- Internal operators
 local int_directcall = function (fobj, ...)
@@ -169,7 +352,7 @@ end]]
 
 --[[
 local int_call = function (obj, ...)
-  local t = int_type(obj) -- Retrieve the type
+  local t = int_class(obj) -- Retrieve the type
   local call = t.dictdata.__call__
   -- TODO: Should handle any kind of error here?
   return int_directcall(call, ...) -- Process the direct call
@@ -240,8 +423,7 @@ typeClass.__base__ = objectClass
 typeClass.__class__ = typeClass
 
 dictClass = {
-    __init__ = defFunction(function (self)
-        -- TODO: Add option to construct dict
+    __init__ = defFunction(function (self) -- TODO: Add option to construct dict from iterable
         self.dictdata = {}
         self.dictinsertorder = {}
     end, { { Name = 'self' } }, false, false),
@@ -401,6 +583,8 @@ dictClass = {
 -- dict_keys(['__name__', '__doc__', '__package__', '__loader__', '__spec__', '__build_class__', '__import__', 'abs', 'all', 'any', 'ascii', 'bin', 'breakpoint', 'callable', 'chr', 'compile', 'delattr', 'dir', 'divmod', 'eval', 'exec', 'format', 'getattr', 'globals', 'hasattr', 'hash', 'hex', 'id', 'input', 'isinstance', 'issubclass', 'iter', 'aiter', 'len', 'locals', 'max', 'min', 'next', 'anext', 'oct', 'ord', 'pow', 'print', 'repr', 'round', 'setattr', 'sorted', 'sum', 'vars', 'None', 'Ellipsis', 'NotImplemented', 'False', 'True', 'bool', 'memoryview', 'bytearray', 'bytes', 'classmethod', 'complex', 'dict', 'enumerate', 'filter', 'float', 'frozenset', 'property', 'int', 'list', 'map', 'object', 'range', 'reversed', 'set', 'slice', 'staticmethod', 'str', 'super', 'tuple', 'type', 'zip', '__debug__', 'BaseException', 'BaseExceptionGroup', 'Exception', 'GeneratorExit', 'KeyboardInterrupt', 'SystemExit', 'ArithmeticError', 'AssertionError', 'AttributeError', 'BufferError', 'EOFError', 'ImportError', 'LookupError', 'MemoryError', 'NameError', 'OSError', 'ReferenceError', 'RuntimeError', 'StopAsyncIteration', 'StopIteration', 'SyntaxError', 'SystemError', 'TypeError', 'ValueError', 'Warning', 'FloatingPointError', 'OverflowError', 'ZeroDivisionError', 'BytesWarning', 'DeprecationWarning', 'EncodingWarning', 'FutureWarning', 'ImportWarning', 'PendingDeprecationWarning', 'ResourceWarning', 'RuntimeWarning', 'SyntaxWarning', 'UnicodeWarning', 'UserWarning', 'BlockingIOError', 'ChildProcessError', 'ConnectionError', 'FileExistsError', 'FileNotFoundError', 'InterruptedError', 'IsADirectoryError', 'NotADirectoryError', 'PermissionError', 'ProcessLookupError', 'TimeoutError', 'IndentationError', 'IndexError', 'KeyError', 'ModuleNotFoundError', 'NotImplementedError', 'RecursionError', 'UnboundLocalError', 'UnicodeError', 'BrokenPipeError', 'ConnectionAbortedError', 'ConnectionRefusedError', 'ConnectionResetError', 'TabError', 'UnicodeDecodeError', 'UnicodeEncodeError', 'UnicodeTranslateError', 'ExceptionGroup', 'EnvironmentError', 'IOError', 'open', 'quit', 'exit', 'copyright', 'credits', 'license', 'help'])
 
 -- TODO: docstrings
+-- TODO: Base, class fetching?
+
 -- TODO
 local getOrErr = function (name, str_name, isLocal) -- DEVIATION: Unfortunately that's not the literal translation. Python has many error types here basing on the context but those are the base ones
     if name == nil then
