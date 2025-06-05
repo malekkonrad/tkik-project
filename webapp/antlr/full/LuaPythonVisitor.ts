@@ -1152,7 +1152,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             let inner = 'local uncaught = tryres\n'
             const except_block_list = ctx.except_block_list() ?? ctx.except_star_block_list()
             for (const except_block of except_block_list) {
-                inner += this.visit(except_block)
+                inner += this.visit(except_block) + '\n'
             }
             inner += 'if uncaught ~= nil then error(uncaught) end' // Rethrow by default
             innerRes += indent(inner)
@@ -1217,6 +1217,9 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             inner += indent(this.visit(block))
             inner += `\nuncaught = nil\n`
             inner += `${definition} = nil` // I don't know why; it just works this way
+        } else {
+            inner += indent(this.visit(block))
+            inner += `\nuncaught = nil\n`
         }
         result += indent(inner)
         result += '\nend'
