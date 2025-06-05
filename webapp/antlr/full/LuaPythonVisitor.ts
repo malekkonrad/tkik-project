@@ -1172,7 +1172,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         const finally_block = ctx.finally_block() // Handle finally block
         if (finally_block != null) res += indent(this.visit(finally_block)) + '\n'
         // Replicate result of the try except else
-        res += 'if trysuc == true then\n'
+        res += 'if trysucc == true then\n'
         res += indent('if tryres ~= nil then return tryres end') + '\n' // Repeat return if the function inside has returned
         if (loopData != null) {
             let innerRes = 'if specAct ~= nil then\n'

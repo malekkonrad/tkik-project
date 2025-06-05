@@ -217,6 +217,27 @@ u.send(6)
 */
   },
   {
+    name: "Errors",
+    src: `
+try:
+    def test():
+        raise "Fatal error"
+    test()
+except:
+    print("Hooo")
+finally:
+    print("Closing too!!!")
+
+try:
+    raise "Sample error"
+except:
+    print("Hiaa")
+    raise "Bla"
+finally:
+    print("Closing :)")
+`
+  },
+  {
     name: "Tic Tac Toe",
     src: `
 # Pam Qian 2016 Fall CS 112 Python Midterm Project II
