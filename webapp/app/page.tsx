@@ -157,7 +157,12 @@ export default function Home() {
             {
               (error != null) ? (
                 <Alert severity='error'>
-                  {error}
+                  {error.trim().split('\n').map((val, i) => (
+                    <>
+                      {(i > 0) ? (<br />) : undefined}
+                      {val}
+                    </>
+                  ))}
                 </Alert>
               ) : undefined
             }
