@@ -250,6 +250,175 @@ end, { { Name = 'self' }, { Name = 'data', Default = None } }, false, false)
 local strClass = int_createobject(typeClass)
 strClass.base = objectClass
 
+strClass.dref.dictdata['__init__'] = defFunction(function (self, data)
+    if type(data) == "string" then
+        self.stringdata = data
+    else
+        -- TODO
+        self.stringdata = ''
+    end
+end, { { Name = 'self' }, { Name = 'data', Default = None } })
+strClass.dref.dictdata['__add__'] = defFunction(function (self, other)
+    return int_custcall(strClass, self.stringdata .. other.stringdata)
+end, { { Name = 'self' }, { Name = 'other' } })
+strClass.dref.dictdata['__eq__'] = defFunction(function (self, other)
+    return int_properbool(self.stringdata == other.stringdata)
+end, { { Name = 'self' }, { Name = 'other' } })
+strClass.dref.dictdata['__ne__'] = defFunction(function (self, other)
+    return int_properbool(self.stringdata ~= other.stringdata)
+end, { { Name = 'self' }, { Name = 'other' } })
+strClass.dref.dictdata['__getitem__'] = defFunction(function (self, i)
+    local num = int_getrawnumber(i)
+    if num  < 0 then
+        num = #self.stringdata - num + 1
+    else
+        num = num + 1
+    end
+    return int_custcall(strClass, self.stringdata[i])
+end, { { Name = 'self' }, { Name = 'i' } })
+strClass.dref.dictdata['__str__'] = defFunction(function (self) return self end, { { Name = 'self' } })
+-- strClass.dref.dictdata['__doc__'] 
+-- strClass.dref.dictdata['isidentifier'] 
+-- strClass.dref.dictdata['isprintable'] 
+-- strClass.dref.dictdata['startswith'] 
+-- strClass.dref.dictdata['endswith'] 
+-- strClass.dref.dictdata['removeprefix'] 
+-- strClass.dref.dictdata['removesuffix'] 
+-- strClass.dref.dictdata['__getnewargs__'] 
+-- strClass.dref.dictdata['replace'] 
+-- strClass.dref.dictdata['__sizeof__'] 
+-- strClass.dref.dictdata['isalnum'] 
+-- strClass.dref.dictdata['__new__'] 
+-- strClass.dref.dictdata['casefold'] 
+-- strClass.dref.dictdata['isdecimal'] 
+-- strClass.dref.dictdata['__repr__'] 
+-- strClass.dref.dictdata['__hash__'] 
+-- strClass.dref.dictdata['__lt__'] 
+-- strClass.dref.dictdata['__le__'] 
+-- strClass.dref.dictdata['__gt__'] 
+-- strClass.dref.dictdata['__ge__'] 
+-- strClass.dref.dictdata['__iter__'] 
+-- strClass.dref.dictdata['__mod__'] 
+-- strClass.dref.dictdata['__rmod__'] 
+-- strClass.dref.dictdata['__mul__'] 
+-- strClass.dref.dictdata['__rmul__'] 
+-- strClass.dref.dictdata['__contains__'] 
+-- strClass.dref.dictdata['encode'] 
+-- strClass.dref.dictdata['split'] 
+-- strClass.dref.dictdata['rsplit'] 
+-- strClass.dref.dictdata['join'] 
+-- strClass.dref.dictdata['capitalize'] 
+-- strClass.dref.dictdata['partition'] 
+-- strClass.dref.dictdata['isalpha'] 
+-- strClass.dref.dictdata['isnumeric'] 
+-- strClass.dref.dictdata['isdigit'] 
+-- strClass.dref.dictdata['swapcase'] 
+-- strClass.dref.dictdata['translate'] 
+-- strClass.dref.dictdata['zfill'] 
+-- strClass.dref.dictdata['index'] 
+-- strClass.dref.dictdata['ljust'] 
+-- strClass.dref.dictdata['format_map'] 
+-- strClass.dref.dictdata['__format__'] 
+-- strClass.dref.dictdata['maketrans'] 
+-- strClass.dref.dictdata['format'] 
+strClass.dref.dictdata['upper'] = defFunction(function (self)
+    local newstring = ''
+    for _, s in ipairs(self.stringdata) do
+        newstring = newstring .. s:upper()
+    end
+    return int_call(strClass, newstring)
+end, { { Name = 'self' } })
+strClass.dref.dictdata['lower'] = defFunction(function (self)
+    local newstring = ''
+    for _, s in ipairs(self.stringdata) do
+        newstring = newstring .. s:lower()
+    end
+    return int_call(strClass, newstring)
+end, { { Name = 'self' } })
+-- strClass.dref.dictdata['rstrip'] 
+-- strClass.dref.dictdata['isascii'] 
+-- strClass.dref.dictdata['lstrip'] 
+-- strClass.dref.dictdata['rfind'] 
+-- strClass.dref.dictdata['expandtabs'] 
+-- strClass.dref.dictdata['rindex'] 
+-- strClass.dref.dictdata['rjust'] 
+strClass.dref.dictdata['__len__'] = defFunction(function (self)
+    return int_custcall(intClass, #self.stringdata)
+end, { { Name = 'self' } })
+strClass.dref.dictdata['islower'] = defFunction(function (self)
+    for _, s in ipairs(self.stringdata) do
+        if s ~= s:lower() then return False end
+    end
+    return True
+end, { { Name = 'self' } })
+strClass.dref.dictdata['isupper'] = defFunction(function (self)
+    for _, s in ipairs(self.stringdata) do
+        if s ~= s:upper() then return False end
+    end
+    return True
+end, { { Name = 'self' } })
+-- strClass.dref.dictdata['find'] 
+-- strClass.dref.dictdata['splitlines'] 
+-- strClass.dref.dictdata['count'] 
+-- strClass.dref.dictdata['strip'] 
+-- strClass.dref.dictdata['center'] 
+-- strClass.dref.dictdata['title'] 
+-- strClass.dref.dictdata['rpartition'] 
+-- strClass.dref.dictdata['istitle'] 
+-- strClass.dref.dictdata['isspace'] 
+
+-- Tuple
+local tupleClass = int_createobject(typeClass, false)
+tupleClass.base = objectClass
+
+tupleClass.dref.dictdata['__init__'] = defFunction(function (self)
+    self.tupledata = {}
+end, { { Name = 'self' } })
+tupleClass.dref.dictdata['__contains__'] = defFunction(function (self, val)
+    for _, v in ipairs(self.tupledata) do
+        if int_operator_eq(self, val) then return True end
+    end
+    return False
+end, { { Name = 'self' }, { Name = 'val' } })
+tupleClass.dref.dictdata['__getitem__'] = defFunction(function (self, i)
+    local num = int_getrawnumber(i)
+    if num  < 0 then
+        num = #self.stringdata - num + 1
+    else
+        num = num + 1
+    end
+    return self.tupledata[num]
+end, { { Name = 'self' }, { Name = 'i' } })
+tupleClass.dref.dictdata['__len__'] = defFunction(function (self)
+    return #self.tupledata
+end, { { Name = 'self' } })
+tupleClass.dref.dictdata['__add__'] = defFunction(function (self, other)
+    local newtuple = int_custcall(tupleClass)
+    for _, v in ipairs(self.tupledata) do
+        table.insert(newtuple.tupledata, v)
+    end
+    table.insert(newtuple.tupledata, other)
+    return newtuple
+end, { { Name = 'self' }, { Name = 'other' } })
+-- tupleClass.dref.dictdata['__new__']
+-- tupleClass.dref.dictdata['__repr__']
+-- tupleClass.dref.dictdata['__hash__']
+-- tupleClass.dref.dictdata['__getattribute__']
+-- tupleClass.dref.dictdata['__lt__']
+-- tupleClass.dref.dictdata['__le__']
+-- tupleClass.dref.dictdata['__eq__']
+-- tupleClass.dref.dictdata['__ne__']
+-- tupleClass.dref.dictdata['__gt__']
+-- tupleClass.dref.dictdata['__ge__']
+-- tupleClass.dref.dictdata['__iter__']
+-- tupleClass.dref.dictdata['__mul__']
+-- tupleClass.dref.dictdata['__rmul__']
+-- tupleClass.dref.dictdata['__getnewargs__']
+-- tupleClass.dref.dictdata['index']
+-- tupleClass.dref.dictdata['count']
+-- tupleClass.dref.dictdata['__class_getitem__']
+-- tupleClass.dref.dictdata['__doc__']
+
 -- Exception
 local baseexceptionClass = int_createobject(typeClass, true)
 baseexceptionClass.base = objectClass
@@ -491,6 +660,8 @@ dictClass.dref.dictdata['pop'] = defFunction(function (self, pos)
     local i = int_getrawnumber(pos)
     if i < 0 then
         i = #self.dictinsertorder + 1 - i
+    else
+        i = i + 1
     end
     local key = table.remove(self.dictinsertorder, i)
     local val = self.dictdata[key]
