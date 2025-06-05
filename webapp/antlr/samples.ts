@@ -247,6 +247,19 @@ finally:
 `
   },
   {
+    name: 'NWD',
+    src: `
+def NWD(a, b):
+    while b != 0:
+        temp = b
+        b = a % b
+        a = temp
+    return a
+
+print(NWD(18, 7))    
+`
+  },
+  {
     name: "Tic Tac Toe",
     src: `
 # Pam Qian 2016 Fall CS 112 Python Midterm Project II
