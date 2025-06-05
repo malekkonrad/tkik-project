@@ -1178,7 +1178,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             let innerRes = 'if specAct ~= nil then\n'
             let inner = ''
             if (loopData.tryCount == 0) { // Need to handle it here
-                inner += `if specAct == 1 then ${loopData.hasElse ? `goto ${this.loopBreakLabel}${loopData.identifier}` : 'break'} end` // Break
+                inner += `if specAct == 1 then ${loopData.hasElse ? `goto ${this.loopBreakLabel}${loopData.identifier}` : 'break'} end\n` // Break
                 inner += `if specAct == 2 then goto ${this.loopContinueLabel}${loopData.identifier} end` // Continue
             } else { // Replicate back
                 inner += 'return nil, specAct'
