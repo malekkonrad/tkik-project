@@ -702,7 +702,8 @@ objectClass.dref.dictdata['__getattribute__'] = defFunction(function (self, key)
     local s = int_getrawstring(key)
     if self.dref ~= nil and self.dref.dictdata[s] ~= nil then
         if int_isinstance(self, type) and self.dref.dictdata[s].__get__ ~= nil then
-            return a.__dict__[b].__get__(None, a)
+
+            return  a.__dict__[b].__get__(None, a)
         end
         return a.__dict__[b]
     end
@@ -1075,7 +1076,6 @@ local getOrErr = function (name, str_name, isLocal) -- DEVIATION: Unfortunately 
     return name
 end
 
-function shortHandIf(a, b, c) if a then return b end return end
 -- NOTE: TODO: In python unpack bases on iter
 
 function tableMerge(...)

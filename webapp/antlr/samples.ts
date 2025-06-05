@@ -228,6 +228,15 @@ except:
 finally:
     print("Closing too!!!")
 
+i = 5
+while i > 0:
+    print(i)
+    try:
+        break
+    except:
+        pass
+    
+
 try:
     raise "Sample error"
 except:
