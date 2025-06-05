@@ -1203,7 +1203,9 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         const name = ctx.name()
         const block = ctx.block()
         
-        let result = `if uncaught ~= nil and custCall(instanceof, uncaught, ${this.visit(expression)}) then\n`
+        let result = `if uncaught ~= nil `
+        if (expression != null) result += ` and custCall(instanceof, uncaught, ${this.visit(expression)}) `
+        result += `then\n`
         let inner = ''
         if (name != null) {
             const cscope = this.scopeStack.at(-1)
