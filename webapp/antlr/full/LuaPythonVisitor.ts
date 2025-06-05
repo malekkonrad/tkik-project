@@ -505,15 +505,15 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
                 case PythonLexer.PERCENTEQUAL:
                     return `${target} = math.fmod(${target}, ${this.visit(star_exprs ?? yield_expr)})`
                 case PythonLexer.AMPEREQUAL:
-                    return `${target} = bit.band(${target}, ${this.visit(star_exprs ?? yield_expr)})`
+                    return `${target} = ${target} & ${this.visit(star_exprs ?? yield_expr)}`
                 case PythonLexer.VBAREQUAL:
-                    return `${target} = bit.bor(${target}, ${this.visit(star_exprs ?? yield_expr)})`
+                    return `${target} = ${target} | ${this.visit(star_exprs ?? yield_expr)}`
                 case PythonLexer.CIRCUMFLEXEQUAL:
-                    return `${target} = bit.bxor(${target}, ${this.visit(star_exprs ?? yield_expr)})`
+                    return `${target} = ${target} ~ ${this.visit(star_exprs ?? yield_expr)}`
                 case PythonLexer.LEFTSHIFTEQUAL:
-                    return `${target} = bit.lshift(${target}, ${this.visit(star_exprs ?? yield_expr)})`
+                    return `${target} = ${target} << ${this.visit(star_exprs ?? yield_expr)}`
                 case PythonLexer.RIGHTSHIFTEQUAL:
-                    return `${target} = bit.rshift(${target}, ${this.visit(star_exprs ?? yield_expr)})`
+                    return `${target} = ${target} >> ${this.visit(star_exprs ?? yield_expr)}`
                 case PythonLexer.DOUBLESTAREQUAL:
                     return `${target} = math.pow(${target}, ${this.visit(star_exprs ?? yield_expr)})`
                 case PythonLexer.DOUBLESLASHEQUAL:
@@ -795,6 +795,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     */
     visitClass_def_raw(ctx: Class_def_rawContext): string {
         // TODO: Handle type_params and arguments
+        // TODO: Create a scope
         // TODO: Why is here a standard block???
         let result = `${this.visit(ctx.name())} = setmetatable({\n`
         result += '\n}, {\n'
@@ -1915,7 +1916,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     visitBitwise_or(ctx: Bitwise_orContext): string {
         const bitOr = ctx.bitwise_or()
         const bitXor = ctx.bitwise_xor()
-        if (bitOr != null) return `bit.bor(${this.visit(bitOr)}, ${this.visit(bitXor)})`
+        if (bitOr != null) return `${this.visit(bitOr)} | ${this.visit(bitXor)}`
         return this.visit(bitXor)
     }
     /*
@@ -1926,7 +1927,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     visitBitwise_xor(ctx: Bitwise_xorContext): string {
         const bitXor = ctx.bitwise_xor()
         const bitAnd = ctx.bitwise_and()
-        if (bitXor != null) return `bit.bxor(${this.visit(bitXor)}, ${this.visit(bitAnd)})`
+        if (bitXor != null) return `${this.visit(bitXor)} ~ ${this.visit(bitAnd)}`
         return this.visit(bitAnd)
     }
     /*
@@ -1937,7 +1938,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     visitBitwise_and(ctx: Bitwise_andContext): string {
         const bitAnd = ctx.bitwise_and()
         const shiftExpr = ctx.shift_expr()
-        if (bitAnd != null) return `bit.band(${this.visit(bitAnd)}, ${this.visit(shiftExpr)})`
+        if (bitAnd != null) return `${this.visit(bitAnd)} & ${this.visit(shiftExpr)}`
         return this.visit(shiftExpr)
     }
     /*
@@ -1952,9 +1953,9 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
           const op = ctx.getChild(1) as TerminalNode
           switch (op.symbol.type) {
             case PythonLexer.LEFTSHIFT:
-              return `bit.lshift(${this.visit(shiftExpr)}, ${this.visit(sum)})`
+              return `${this.visit(shiftExpr)} << ${this.visit(sum)}`
             case PythonLexer.RIGHTSHIFT:
-              return `bit.rshift(${this.visit(shiftExpr)}, ${this.visit(sum)})`
+              return `${this.visit(shiftExpr)} >> ${this.visit(sum)}`
           }
         }
         return this.visit(sum)
@@ -2023,7 +2024,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
                 case PythonLexer.MINUS:
                     return `-(${this.visit(factor)})`
                 case PythonLexer.TILDE:
-                    return `bit.bnot(${this.visit(factor)})`
+                    return `~${this.visit(factor)}`
             }
         }
         return this.visit(ctx.power())

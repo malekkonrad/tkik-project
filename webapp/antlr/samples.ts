@@ -63,12 +63,12 @@ test = 56
 def fact(n):
     return 1 if n == 0 else n * fact(n - 1)
 print(fact(10))
+`/*
 
 class Foo:
     def __init__(self):
         self.cls_var = 45
         localvar = 56
-`
   },
   {
     name: "Classes",
@@ -92,6 +92,7 @@ Foo.Bar()
 class a():
     def __call__(self):
         print('called', self)
+        return 1
     
 class b():
     def __get__(*args):
@@ -101,19 +102,59 @@ class b():
 class c():
     __call__ = b()
     
-class d():
-    def __get__(*args):
-        print("Get", args)
+class dg():
+    def __call__(*args):
+        print("Get call", args)
         return c()
+        
+class dh(dg):
+    pass
+    
+class d():
+    __get__ = dh()
+
+class de(d):
+    pass 
 
 class e():
-    __call__ = d()
+    __call__ = de()
+    __len__ = de()
 
-print("Instance")
+print("Len")
+len(e())
+
+print("\nInstance")
 e().__call__()
-print("Type")
+e()()
+print("\nType")
 e.__call__()
+e()
+e.__dict__['__call__']()
 `
+*/
+/*
+Len
+Get call (<__main__.dh object at 0x7eb2806e9cd0>, <__main__.de object at 0x7eb2806e9dc0>, <__main__.e object at 0x7eb2806e9e80>, <class '__main__.e'>)
+Get (<__main__.b object at 0x7eb2806e9c70>, <__main__.c object at 0x7eb2806e9e50>, <class '__main__.c'>)
+called <__main__.a object at 0x7eb2806e9eb0>
+
+Instance
+Get call (<__main__.dh object at 0x7eb2806e9cd0>, <__main__.de object at 0x7eb2806e9d90>, <__main__.e object at 0x7eb2806e9e80>, <class '__main__.e'>)
+Get (<__main__.b object at 0x7eb2806e9c70>, <__main__.c object at 0x7eb2806e9e50>, <class '__main__.c'>)
+called <__main__.a object at 0x7eb2806e9e80>
+Get call (<__main__.dh object at 0x7eb2806e9cd0>, <__main__.de object at 0x7eb2806e9d90>, <__main__.e object at 0x7eb2806e9e50>, <class '__main__.e'>)
+Get (<__main__.b object at 0x7eb2806e9c70>, <__main__.c object at 0x7eb2806e9e80>, <class '__main__.c'>)
+called <__main__.a object at 0x7eb2806e9eb0>
+
+Type
+Get call (<__main__.dh object at 0x7eb2806e9cd0>, <__main__.de object at 0x7eb2806e9d90>, None, <class '__main__.e'>)
+Get (<__main__.b object at 0x7eb2806e9c70>, <__main__.c object at 0x7eb2806e9e50>, <class '__main__.c'>)
+called <__main__.a object at 0x7eb2806e9e80>
+ERROR!
+Traceback (most recent call last):
+  File "<main.py>", line 43, in <module>
+TypeError: 'de' object is not callable
+*/
   },
   {
     name: "Pythonese Brainrot",
@@ -134,12 +175,6 @@ def test(f):
 def omg(a, /, *, b = None):
   print(rf'\\"\\n {a=!a} {a=:{a}.{a}f}')
 
-@another
-class abc(str):
-  pr = 12
-  def __init__(self, eee):
-      print(eee)
-
 omg(1)
 a = abc(5)
 
@@ -155,6 +190,14 @@ def a():
         c()
     b()
 a()
+`
+/*
+
+@another
+class abc(str):
+  pr = 12
+  def __init__(self, eee):
+      print(eee)
 
 # Easy one
 def right(eeee):
@@ -171,7 +214,7 @@ except:
     ...
 u.send(None)
 u.send(6) 
-`
+*/
   },
   {
     name: "Tic Tac Toe",
@@ -253,7 +296,7 @@ def startGamming(board, symbol_1, symbol_2, count):
                            "[left column: enter 0, middle column: enter 1, right column enter 2]"))
 
         # Check if the square is already filled
-    while (board[row][column] == symbol_1)or (board[row][column] == symbol_2):
+    while (board[row][column] == symbol_1) or (board[row][column] == symbol_2):
         filled = illegal(board, symbol_1, symbol_2, row, column)
         row = int(input("Pick a row[upper row:"
                         "[enter 0, middle row: enter 1, bottom row: enter 2]:"))
