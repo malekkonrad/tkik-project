@@ -1648,7 +1648,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         
         const expr = ctx.expression()
         // TODO: This should respect errors
-        if (expr != null) return `(function () if ${this.visit(ctx.getChild(2))} then return ${this.visit(ctx.getChild(0))} else return ${this.visit(expr)} end)()`
+        if (expr != null) return `(function () if ${this.visit(ctx.getChild(2))} then return ${this.visit(ctx.getChild(0))} else return ${this.visit(expr)} end end)()`
         return this.visit(ctx.getChild(0))
     }
     /*
