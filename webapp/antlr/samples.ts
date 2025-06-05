@@ -87,6 +87,35 @@ Foo.Bar()
 `
   },
   {
+    name: "Ultimate classes getters",
+    src: `
+class a():
+    def __call__(self):
+        print('called', self)
+    
+class b():
+    def __get__(*args):
+        print("Get", args)
+        return a()
+        
+class c():
+    __call__ = b()
+    
+class d():
+    def __get__(*args):
+        print("Get", args)
+        return c()
+
+class e():
+    __call__ = d()
+
+print("Instance")
+e().__call__()
+print("Type")
+e.__call__()
+`
+  },
+  {
     name: "Pythonese Brainrot",
     src: `
 try:

@@ -4,7 +4,7 @@ local typeClass = {}
 typeClass.class = typeClass
 local dictClass = {}
 dictClass.class = typeClass
-local int_properbool
+local int_properbool, int_custcall, int_getattribute_implicit
 
 -- LUA Polyfills
 function tableFind(t, val)
@@ -65,6 +65,7 @@ end, { { Name = 'self' } }, false, false)
 local intClass = int_createobject(typeClass, true)
 intClass.base = objectClass
 intClass.dref.dictdata['__init__'] = defFunction(function (self, data, base)
+    -- TODO: Handle others
     if type(data) == 'number' then
         self.numberdata = data
     else
@@ -259,7 +260,7 @@ strClass.dref.dictdata['__init__'] = defFunction(function (self, data)
     end
 end, { { Name = 'self' }, { Name = 'data', Default = None } })
 strClass.dref.dictdata['__add__'] = defFunction(function (self, other)
-    return int_custcall(strClass, self.stringdata .. other.stringdata)
+    return int_custcall(self.class, self.stringdata .. other.stringdata)
 end, { { Name = 'self' }, { Name = 'other' } })
 strClass.dref.dictdata['__eq__'] = defFunction(function (self, other)
     return int_properbool(self.stringdata == other.stringdata)
@@ -274,7 +275,7 @@ strClass.dref.dictdata['__getitem__'] = defFunction(function (self, i)
     else
         num = num + 1
     end
-    return int_custcall(strClass, self.stringdata[i])
+    return int_custcall(self.class, self.stringdata[i])
 end, { { Name = 'self' }, { Name = 'i' } })
 strClass.dref.dictdata['__str__'] = defFunction(function (self) return self end, { { Name = 'self' } })
 -- strClass.dref.dictdata['__doc__'] 
@@ -326,14 +327,14 @@ strClass.dref.dictdata['upper'] = defFunction(function (self)
     for _, s in ipairs(self.stringdata) do
         newstring = newstring .. s:upper()
     end
-    return int_call(strClass, newstring)
+    return int_custcall(self.class, newstring)
 end, { { Name = 'self' } })
 strClass.dref.dictdata['lower'] = defFunction(function (self)
     local newstring = ''
     for _, s in ipairs(self.stringdata) do
         newstring = newstring .. s:lower()
     end
-    return int_call(strClass, newstring)
+    return int_custcall(self.class, newstring)
 end, { { Name = 'self' } })
 -- strClass.dref.dictdata['rstrip'] 
 -- strClass.dref.dictdata['isascii'] 
@@ -445,11 +446,10 @@ local int_directcall = function (fobj, ...)
     return fobj.fref(...)
 end
 
-local int_getattribute_implicit
-local int_custcall = function (obj, ...)
-    local call = int_getattribute_implicit(obj.class, '__call__')
+int_custcall = function (obj, ...)
+    local call = int_getattribute_implicit(obj, obj.class, '__call__')
     while call.fref == nil do
-        call = int_getattribute_implicit(call.class, '__call__')
+        call = int_getattribute_implicit(call, call.class, '__call__')
     end
     return int_directcall(call, table.pack(...), {}) -- selene: allow(incorrect_library_use)
 end
@@ -471,35 +471,43 @@ local int_operator_eq = function (first, second)
     -- TODO
 end
 
-int_getattribute_implicit = function (t, attr)
-    local ct = t
+int_getattribute_implicit = function (obj, cls, attr)
+    local ct = cls
     while ct ~= None and ct ~= nil do
         local a = ct.dref.dictdata[attr] 
         if a ~= nil then
-            local getter_t = int_type(a)
+            local getter_t = a.class
             local getter_ct = getter_t
             local getter = nil -- Can't use getattribute_implicit as __get__ is not recursive
-            while getter_ct ~= noneClass and getter_ct ~= nil do
-                local cgetter = getter_ct.oref.dictdata['__get__'] 
+            while getter_ct ~= None and getter_ct ~= nil do
+                local cgetter = getter_ct.dref.dictdata['__get__']
                 if cgetter ~= nil then
                     getter = cgetter
                     break
                 end
-                getter_ct = getter_ct.oref.dictdata.__base__
+                getter_ct = getter_ct.base
             end
 
             if getter ~= noneClass and getter ~= nil then
-                a = int_custcall(getter, a, getter_t)
+                --[[
+                    TODO: This is completely wrong but I havent figured out how to do it completely correctly
+                if getter.inst_getcall ~= nil then
+                    a = getter.inst_getcall(getter, obj, cls)
+                else
+                    a = int_custcall(a, obj, cls) -- Standard call
+                end
+                ]]
+                a = int_directcall(getter.fref, table.pack(a, obj, class))
             end
             
             return a
         end
-        ct = ct.oref.dictdata.__base__
+        ct = ct.base
     end
 end
 
-local methodwrapperClass = int_createobject(typeClass, true)
-methodwrapperClass.base = objectClass
+local methodClass = int_createobject(typeClass, true)
+methodClass.base = objectClass
 local functionClass = int_createobject(typeClass, true)
 functionClass.base = objectClass
   if not attr then
@@ -556,11 +564,11 @@ objectClass.dref.dictdata['__init__'] = defFunction(function (self) end, { { Nam
 objectClass.dref.dictdata['__init_subclass__'] = defFunction(function (self) end, { { Name = 'self' } })
 objectClass.dref.dictdata['__class__'] = defFunction(function (self) return self.class end, { { Name = 'self' } })
 objectClass.dref.dictdata['__setattr__'] = defFunction(function (self, key, v)
-    local getitem = int_getattribute_implicit(self.dref, '__getitem__')
+    local getitem = int_getattribute_implicit(self.dref, self.dref.class, '__getitem__')
     int_custcall(getitem, key, v)
 end, { { Name = 'self' }, { Name = 'key' }, { Name = 'v' } })
 objectClass.dref.dictdata['__delattr__'] = defFunction(function (self, key)
-    local delitem = int_getattribute_implicit(self.dref, '__delitem__')
+    local delitem = int_getattribute_implicit(self.dref, self.dref.class, '__delitem__')
     int_custcall(delitem, key)
 end, { { Name = 'self' }, { Name = 'key' } })
 objectClass.dref.dictdata['__eq__'] = defFunction(function (self, other)
@@ -590,26 +598,47 @@ end, { { Name = 'self' } })
 -- objectClass.dref.dictdata['__subclasshook__']
 -- objectClass.dref.dictdata['__format__']
 
--- TODO: Module-level __getattr__, __dir__
-
-local typeClass = {
-  __call__ = function ()
-
-  end,
-  __delattr__ = function ()
-
-  end,
-  
-}
-objectClass.__class__ = typeClass
-typeClass.__base__ = objectClass
--- typeClass.__bases__ = tuple(objectClass)
-typeClass.__class__ = typeClass
-
-dictClass = {
-    __init__ = defFunction(function (self) -- TODO: Add option to construct dict from iterable
-        self.dictdata = {}
-        self.dictinsertorder = {}
+typeClass.dref.dictdata['__call__'] = defFunction(function (kwargs, args, self)
+    local newmethod = int_getattribute_implicit(self, self.class, '__new__')
+    -- TODO: If __new__() does not return an instance of cls, then the new instance’s __init__() method will not be invoked.
+    local res = int_directcall(newmethod, args.listdata, kwargs.dictdata)
+    if res ~= nil and res ~= None then
+        local initmethod = int_getattribute_implicit(res, res.class, '__init__')
+        int_directcall(initmethod, args.listdata, kwargs.dictdata)
+        return res
+    end
+end, { { Name = "self" } }, true, true)
+-- typeClass.dref.dictdata['__repr__']
+-- typeClass.dref.dictdata['__getattribute__']
+-- typeClass.dref.dictdata['__setattr__']
+-- typeClass.dref.dictdata['__delattr__']
+-- typeClass.dref.dictdata['__init__']
+-- typeClass.dref.dictdata['__or__']
+-- typeClass.dref.dictdata['__ror__']
+-- typeClass.dref.dictdata['mro']
+-- typeClass.dref.dictdata['__subclasses__']
+-- typeClass.dref.dictdata['__prepare__']
+-- typeClass.dref.dictdata['__instancecheck__']
+-- typeClass.dref.dictdata['__subclasscheck__']
+-- typeClass.dref.dictdata['__dir__']
+-- typeClass.dref.dictdata['__sizeof__']
+-- typeClass.dref.dictdata['__basicsize__']
+-- typeClass.dref.dictdata['__itemsize__']
+-- typeClass.dref.dictdata['__flags__']
+-- typeClass.dref.dictdata['__weakrefoffset__']
+-- typeClass.dref.dictdata['__base__']
+-- typeClass.dref.dictdata['__dictoffset__']
+-- typeClass.dref.dictdata['__qualname__']
+-- typeClass.dref.dictdata['__bases__']
+-- typeClass.dref.dictdata['__mro__']
+-- typeClass.dref.dictdata['__module__']
+-- typeClass.dref.dictdata['__abstractmethods__']
+-- typeClass.dref.dictdata['__dict__']
+-- typeClass.dref.dictdata['__doc__']
+-- typeClass.dref.dictdata['__text_signature__']
+-- typeClass.dref.dictdata['__annotations__']
+-- typeClass.dref.dictdata['__type_params__']
+-- typeClass.dref.dictdata['__name__']
 
 dictClass.dref.dictdata['__init__'] = defFunction(function (self) -- TODO: Add option to construct dict from iterable
     self.dictdata = {}
@@ -618,7 +647,7 @@ end, { { Name = 'self' } }, false, false)
 dictClass.dref.dictdata['__delitem__'] = defFunction(function (self, i)
     local s = int_getrawstring(i)
     self.dictdata[s] = nil
-    local order_i = tableFind(self.dictinsertorder, s)
+    local order_i = tableFind(self.dictinsertorder, s) -- TODO: Should customize that to use any scope
     if order_i ~= nil then table.remove(self.dictinsertorder, order_i) end
 end, { { Name = 'self' }, { Name = 'i' } }, false, false)
 dictClass.dref.dictdata['popitem'] = defFunction(function (self)
@@ -799,92 +828,6 @@ function objectMerge(...)
         end
     end
     return target
-end
-
-local defFunction = function (func, argsData, has_largs, has_kwargs)
-    -- argData = { Name = STRING_NAME, Default = VALUE, OnlyPositional = BOOLEAN, OnlyNamed = BOOLEAN }
-    -- argsData = { argData }
-    local argsList = {}
-    local min_pos_args, max_pos_args = 0, 0
-    for i, v in ipairs(argsData) do
-        if not v.OnlyNamed then
-            if v.Default ~= nil then
-                max_pos_args = i
-            else
-                min_pos_args = i
-                max_pos_args = i
-            end
-        end
-        table.insert(argsList, v.Name)
-    end
-
-    -- Calling the function
-    return function (orderedArgs, kwArgs) -- TODO: Check if that's good :D
-        local finalArgs = {}
-        local specifiedArgs = {}
-        local largs = {}
-        -- Add defaults
-        for i, arg in ipairs(argsData) do
-            if arg.Default ~= nil then
-                finalArgs[i] = arg.Default
-            end
-        end
-        -- Apply positional args
-        local all_pos_args = #orderedArgs
-        if all_pos_args > max_pos_args and not has_largs then
-            if min_pos_args == max_pos_args then
-                error("TypeError: takes from " .. tostring(min_pos_args) .. " to " .. tostring(max_pos_args) .. " positional arguments but " .. tostring(all_pos_args) .. " were given")
-            else
-                error("TypeError: takes " .. tostring(min_pos_args) .. " positional arguments but " .. tostring(all_pos_args) .. " were given")
-            end
-        end
-        
-        for i, v in ipairs(orderedArgs) do
-            if i > #argsData or argsData[i].OnlyNamed then
-                if has_largs then
-                    table.insert(largs, v)
-                else
-                    error("TypeError: takes " .. tostring(i - 1) .. " positional arguments but 4 were given")
-                end
-            else
-                finalArgs[i] = v
-                specifiedArgs[i] = true
-            end
-        end
-        -- Apply kwargs
-        for name, v in pairs(kwArgs) do
-            local i = tableFind(argsList, name)
-            if i ~= nil then
-                if argsData[i].OnlyPositional then error("TypeError: got some positional-only arguments passed as keyword arguments: '" .. name .. "'") end
-                if specifiedArgs[i] then error("TypeError: got multiple values for argument '" .. name .. "'") end
-                specifiedArgs[i] = true -- Mark as specified
-                finalArgs[i] = v -- Add the value
-                kwArgs[name] = nil -- Remove the value from kwargs
-            elseif not has_kwargs then
-                error("TypeError got an unexpected keyword argument '" .. name .. "'")
-            end
-            -- Else it's kept and passed as kwArgs
-        end
-        local missing_pos_args = {}
-        for i, v in ipairs(argsData) do
-            if not specifiedArgs[i] and v.Default == nil and not v.OnlyNamed then
-                table.insert(missing_pos_args, v.Name)
-            end
-        end
-        if #missing_pos_args > 0 then error("TypeError: missing " .. tostring(#missing_pos_args) .. " required positional arguments: '" .. table.concat(missing_pos_args, "', '") .. "'") end
-        local missing_kw_args = {}
-        for i, v in ipairs(argsData) do
-            if not specifiedArgs[i] and v.Default == nil and v.OnlyNamed then
-                table.insert(missing_kw_args, v.Name)
-            end
-        end
-        if #missing_kw_args > 0 then error("TypeError: missing " .. tostring(#missing_kw_args) .. " required keyword-only arguments: '" .. table.concat(missing_kw_args, "', '") .. "'") end
-        
-        local func_args = {}
-        if has_kwargs then table.insert(func_args, kwargs) end
-        if has_largs then table.insert(func_args, largs) end
-        return func(table.unpack(tableMerge(func_args, finalArgs)))
-    end
 end
 
 local defClass = function (f, bases)
