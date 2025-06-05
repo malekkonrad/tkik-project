@@ -48,12 +48,9 @@ Wersja demonstracyjna dostępna pod adresem: [link](https://malekkonrad.github.i
 ### Aktualnie zaimplementowane:
 - Definicje funkcji z parametrami
 - Instrukcje warunkowe (if/elif/else)
-- Pętle (for, while)
+- Pętle (while)
 - Operacje arytmetyczne i logiczne
 - Zmienne i przypisania
 - Wywołania funkcji
 - Podstawowe typy danych (int, float, string, bool)
-- Definicje klas
-- Obsługa list i słowników
 - Obsługa wyjątków (try/except)
-- Comprehensions (list/dict/set)
