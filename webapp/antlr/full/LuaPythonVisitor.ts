@@ -470,11 +470,11 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             const yield_expr = ctx.yield_expr()
             
             const star_targets_list = ctx.star_targets_list()
-            let result = `local ass_res = ${this.visit(star_exprs ?? yield_expr)}\n`
+            let result = `local ass_res = ${this.visit(star_exprs ?? yield_expr)}`
             for (const star_targets of star_targets_list) {
-                result += `do\n${indent(this.visit(star_targets))}\nend\n`
+                result += `\ndo\n${indent(this.visit(star_targets))}\nend`
             }
-            return `do\n${indent(result)}end`
+            return `do\n${indent(result)}\nend`
         }
         const augassign = ctx.augassign()
         if (augassign != null) { // single_target augassign (yield_expr | star_expressions)
@@ -1050,13 +1050,13 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         cscope.loopStack.push(ld)
 
         let result = `while ${this.visit(ctx.named_expression())} do\n`
-        result += indent(this.visit(ctx.block()))
+        result += indent(this.visit(ctx.block())) + '\n'
         result += indent(`::${this.loopContinueLabel}${ld.identifier}::`)
         result += '\nend'
         if (ld.hasElse) {
             this.putBlock = true // adds the `do`, `end` block
-            result += this.visit(else_block)
-            result += `::${this.loopBreakLabel}${ld.identifier}::`
+            result += '\n' + indent(this.visit(else_block))
+            result += `\n::${this.loopBreakLabel}${ld.identifier}::`
         }
 
         cscope.loopStack.pop()
