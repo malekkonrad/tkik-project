@@ -42,6 +42,7 @@ dictClass.base = objectClass
 local noneClass = int_createobject(typeClass, true)
 noneClass.base = objectClass
 local None = int_createobject(noneClass, false)
+objectClass.base = None
 -- TODO: Add staticmethod
 noneClass.dref.dictdata['__new__'] = defFunction(function (cls)
     return None
@@ -284,19 +285,10 @@ local int_operator_eq = function (first, second)
     -- TODO
 end
 
-local int_getattribute_implicit
-local int_custcall = function (obj, ...)
-    local call = int_getattribute_implicit(obj.class, '__call__')
-    while call.fref == nil do
-        call = int_getattribute_implicit(call.class, '__call__')
-    end
-    return int_directcall(call, table.pack(...), {}) -- selene: allow(incorrect_library_use)
-end
-
 int_getattribute_implicit = function (t, attr)
     local ct = t
-    while ct ~= noneClass and ct ~= nil do
-        local a = ct.oref.dictdata[attr] 
+    while ct ~= None and ct ~= nil do
+        local a = ct.dref.dictdata[attr] 
         if a ~= nil then
             local getter_t = int_type(a)
             local getter_ct = getter_t
@@ -369,44 +361,50 @@ local staticmethodClass =
 end, { { Name = 'func' } }, false, false)
 ]]
 
-local objectClass = {
-  -- __format__
-  -- TODO: Wrap with staticmethod()
-  __new__ = defFunction(function(cls)
-    return {
-        __class__ = cls,
-        __dict__ = {}
-    }
-  end),
-  __init__ = nil,
-  __eq__ = defFunction(function (self, other)
-      return self == other
-  end, { { Name = 'self' }, { Name = 'other' } }, false, false),
-  -- __hash__ - NOT DO
-  -- __lt__ = 
-  -- __le__ = 
-  -- __sizeof__ - NOT DO
-  __delattr__ = nil,
-  __str__ = defFunction(function (self, other)
 
-  end, { { Name = 'self' } }, false, false),
-  __ne__ = nil,
-  __gt__ = nil,
-  __setattr__ = nil,
-  __init_subclass__ = nil,
-  -- __reduce_ex__
-  __subclasshook__ = nil,
-  __getattribute__ = nil,
-  __getstate__ = defFunction(function (self, other)
-    return noneClass
-  end, { { Name = 'self' } }, false, false),
-  __ge__ = nil,
-  __class__ = nil, -- Is set later
-  -- __reduce__
-  __repr__ = nil,
-  -- __doc__
-  -- __dir__
-}
+-- TODO: Wrap with staticmethod()
+objectClass.dref.dictdata['__new__'] = defFunction(function (cls)
+    return int_createobject(cls, true)
+end, { { Name = 'cls' } })
+objectClass.dref.dictdata['__init__'] = defFunction(function (self) end, { { Name = 'self' } })
+objectClass.dref.dictdata['__init_subclass__'] = defFunction(function (self) end, { { Name = 'self' } })
+objectClass.dref.dictdata['__class__'] = defFunction(function (self) return self.class end, { { Name = 'self' } })
+objectClass.dref.dictdata['__setattr__'] = defFunction(function (self, key, v)
+    local getitem = int_getattribute_implicit(self.dref, '__getitem__')
+    int_custcall(getitem, key, v)
+end, { { Name = 'self' }, { Name = 'key' }, { Name = 'v' } })
+objectClass.dref.dictdata['__delattr__'] = defFunction(function (self, key)
+    local delitem = int_getattribute_implicit(self.dref, '__delitem__')
+    int_custcall(delitem, key)
+end, { { Name = 'self' }, { Name = 'key' } })
+objectClass.dref.dictdata['__eq__'] = defFunction(function (self, other)
+    return int_properbool(self == other)
+end, { { Name = 'self' }, { Name = 'other' } })
+objectClass.dref.dictdata['__ne__'] = defFunction(function (self, other)
+    return int_properbool(self ~= other)
+end, { { Name = 'self' }, { Name = 'other' } })
+objectClass.dref.dictdata['__getattribute__'] = defFunction(function (self, key)
+    
+end, { { Name = 'self' }, { Name = 'key' } })
+objectClass.dref.dictdata['__getstate__'] = defFunction(function (self)
+    return None
+end, { { Name = 'self' } })
+-- objectClass.dref.dictdata['__doc__'] 
+-- objectClass.dref.dictdata['__dir__'] 
+-- objectClass.dref.dictdata['__sizeof__'] 
+-- objectClass.dref.dictdata['__ge__'] 
+-- objectClass.dref.dictdata['__gt__'] 
+-- objectClass.dref.dictdata['__le__'] 
+-- objectClass.dref.dictdata['__lt__'] 
+-- objectClass.dref.dictdata['__str__'] 
+-- objectClass.dref.dictdata['__hash__'] 
+-- objectClass.dref.dictdata['__repr__'] 
+-- objectClass.dref.dictdata['__reduce_ex__'] 
+-- objectClass.dref.dictdata['__reduce__'] 
+-- objectClass.dref.dictdata['__subclasshook__']
+-- objectClass.dref.dictdata['__format__']
+
+-- TODO: Module-level __getattr__, __dir__
 
 local typeClass = {
   __call__ = function ()
@@ -426,165 +424,162 @@ dictClass = {
     __init__ = defFunction(function (self) -- TODO: Add option to construct dict from iterable
         self.dictdata = {}
         self.dictinsertorder = {}
-    end, { { Name = 'self' } }, false, false),
-    -- __init__
-    -- __format__ = nil,
-    __delitem__ = defFunction(function (self, i)
-        local s = int_getrawstring(i)
-        self.dictdata[s] = nil
-        local order_i = tableFind(self.dictinsertorder, s)
-        if order_i ~= nil then
-            table.remove(self.dictinsertorder, order_i)
+
+dictClass.dref.dictdata['__init__'] = defFunction(function (self) -- TODO: Add option to construct dict from iterable
+    self.dictdata = {}
+    self.dictinsertorder = {}
+end, { { Name = 'self' } }, false, false)
+dictClass.dref.dictdata['__delitem__'] = defFunction(function (self, i)
+    local s = int_getrawstring(i)
+    self.dictdata[s] = nil
+    local order_i = tableFind(self.dictinsertorder, s)
+    if order_i ~= nil then table.remove(self.dictinsertorder, order_i) end
+end, { { Name = 'self' }, { Name = 'i' } }, false, false)
+dictClass.dref.dictdata['popitem'] = defFunction(function (self)
+    if #self.dictinsertorder == 0 then error('TODO') end
+    local key = table.remove(self.dictinsertorder, #self.dictinsertorder)
+    local val = self.dictdata[key]
+    self.dictdata[key] = nil
+    return val
+end, { { Name = 'self' } }, false, false)
+dictClass.dref.dictdata['__or__'] = defFunction(function (self, other)
+    local newDict = int_custcall(self.class)
+    local addedKeys = {}
+    for i, v in pairs(self.dictdata) do
+        if v ~= nil then
+            newDict.dictdata[i] = v
+            table.insert(newDict.dictinsertorder, i)
+            addedKeys[i] = true
         end
-    end, { { Name = 'self' }, { Name = 'i' } }, false, false),
-    -- __init_subclass__ = nil,
-    popitem = defFunction(function (self)
-        if #self.dictinsertorder == 0 then error('TODO') end
-        local key = table.remove(self.dictinsertorder, #self.dictinsertorder)
-        local val = self.dictdata[key]
-        self.dictdata[key] = nil
-        return val
-    end, { { Name = 'self' } }, false, false),
-    __or__ = defFunction(function (self, other)
-        local newDict = int_custcall(int_type(self))
-        local addedKeys = {}
-        for i, v in pairs(self.dictdata) do
-            if v ~= nil then
-                newDict.dictdata[i] = v
+    end
+    for i, v in pairs(other.dictdata) do
+        if v ~= nil then
+            newDict.dictdata[i] = v
+            if not addedKeys[i] then
                 table.insert(newDict.dictinsertorder, i)
                 addedKeys[i] = true
             end
         end
-        for i, v in pairs(other.dictdata) do
-            if v ~= nil then
-                newDict.dictdata[i] = v
-                if not addedKeys[i] then
-                    table.insert(newDict.dictinsertorder, i)
-                    addedKeys[i] = true
-                end
-            end
+    end
+    return newDict
+end, { { Name = 'self' }, { Name = 'other'} }, false, false)
+dictClass.dref.dictdata['__contains__'] = defFunction(function (self, i)
+    local s = int_getrawstring(i)
+    return int_custcall(boolClass, self.dictdata[s] ~= nil)
+end, { { Name = 'self' }, { Name = 'i' } }, false, false)
+dictClass.dref.dictdata['__len__'] = defFunction(function (self)
+    return int_custcall(numberClass, #self.dictinsertorder)
+end, { { Name = 'self' }, { Name = 'i' } }, false, false)
+dictClass.dref.dictdata['pop'] = defFunction(function (self, pos)
+    local i = int_getrawnumber(pos)
+    if i < 0 then
+        i = #self.dictinsertorder + 1 - i
+    end
+    local key = table.remove(self.dictinsertorder, i)
+    local val = self.dictdata[key]
+    self.dictdata[key] = nil
+    return val
+end, { { Name = 'self' }, { Name = 'pos', Default = int_custcall(numberClass, -1) } }, false, false)
+dictClass.dref.dictdata['__setitem__'] = defFunction(function (self, i, v)
+    local s = int_getrawstring(i)
+    self.dictdata[i] = v
+    if tableFind(self.dictinsertorder, s) ~= nil then
+        table.insert(self.dictinsertorder, s)
+    end
+end, { { Name = 'self' }, { Name = 'i' }, { Name = 'v' } }, false, false)
+dictClass.dref.dictdata['__eq__'] = defFunction(function (self, other)
+    local keys = {}
+    for _, k in ipairs(self.dictinsertorder) do
+        keys[k] = (keys[k] or 0) + 1
+    end
+    for _, k in ipairs(other.dictinsertorder) do
+        keys[k] = (keys[k] or 0) + 1
+    end
+    for _, c in pairs(keys) do
+        if c == 1 then
+            error('TODO')
         end
-        return newDict
-    end, { { Name = 'self' }, { Name = 'other'} }, false, false),
-    __iter__ = nil,
-    fromkeys = nil,
-    -- __hash__ = nil, NOT DO
-    -- __sizeof__ = nil, NOT DO
-    __contains__ = defFunction(function (self, i)
-        local s = int_getrawstring(i)
-        return int_custcall(boolClass, self.dictdata[s] ~= nil)
-    end, { { Name = 'self' }, { Name = 'i' } }, false, false),
-    __len__ = defFunction(function (self)
-        return int_custcall(numberClass, #self.dictinsertorder)
-    end, { { Name = 'self' }, { Name = 'i' } }, false, false),
-    pop = defFunction(function (self, pos)
-        local i = int_getrawnumber(pos)
-        if i < 0 then
-            i = #self.dictinsertorder + 1 - i
-        end
-        local key = table.remove(self.dictinsertorder, i)
-        local val = self.dictdata[key]
-        self.dictdata[key] = nil
-        return val
-    end, { { Name = 'self' }, { Name = 'pos', Default = int_custcall(numberClass, -1) } }, false, false),
-    -- __dir__ = nil,
-    __setitem__ = defFunction(function (self, i, v)
-        local s = int_getrawstring(i)
-        self.dictdata[i] = v
-        if tableFind(self.dictinsertorder, s) ~= nil then
-            table.insert(self.dictinsertorder, s)
-        end
-    end, { { Name = 'self' }, { Name = 'i' }, { Name = 'v' } }, false, false),
-    __eq__ = defFunction(function (self, other)
-        local keys = {}
-        for _, k in ipairs(self.dictinsertorder) do
-            keys[k] = (keys[k] or 0) + 1
-        end
-        for _, k in ipairs(other.dictinsertorder) do
-            keys[k] = (keys[k] or 0) + 1
-        end
-        for _, c in pairs(keys) do
-            if c == 1 then
-                error('TODO')
-            end
-        end
+    end
 
-        for k, v in pairs(self.dictdata) do
-            if not int_operator_truth(int_operator_eq(v, other.dictdata[k])) then
-                return falseBool
+    for k, v in pairs(self.dictdata) do
+        if not int_operator_truth(int_operator_eq(v, other.dictdata[k])) then
+            return falseBool
+        end
+    end
+    return trueBool
+end, { { Name = 'self' }, { Name = 'other' } }, false, false)
+dictClass.dref.dictdata['__ror__'] = defFunction(function (self, other)
+    local call = int_getattribute_implicit(other.class, '__or__')
+    return int_custcall(call, other, self)
+end, { { Name = 'self' }, { Name = 'other'} }, false, false)
+dictClass.dref.dictdata['setdefault'] = defFunction(function (self, keyname, value)
+    local s = int_getrawstring(keyname)
+    if self.dictdata[s] == nil then -- Add the value via __setitem__
+        local call = int_getattribute_implicit(self.class, '__setitem__')
+        int_custcall(call, keyname, value)
+    end
+end, { { Name = 'self' }, { Name = 'keyname' }, { Name = 'value', Default = noneClass } }, false, false)
+dictClass.dref.dictdata['__getitem__'] = defFunction(function (self, key)
+    local s = int_getrawstring(key)
+    local val = self.dictdata[s]
+    if val == nil then error('TODO') end
+    return val
+end, { { Name = 'self' }, { Name = 'key' } }, false, false)
+dictClass.dref.dictdata['get'] = defFunction(function (self, keyname, default_value)
+    local s = int_getrawstring(keyname)
+    local val = self.dictdata[s]
+    if val == nil then return default_value end
+    return val
+end, { { Name = 'self'}, { Name = 'keyname' }, { Name = 'value', Default = noneClass } }, false, false)
+dictClass.dref.dictdata['copy'] = defFunction(function (self)
+    local newDict = int_custcall(self.class)
+    for i, v in pairs(self.dictdata) do
+        newDict.dictdata[i] = v
+    end
+    newDict.dictinsertorder = table.pack(table.unpack(self.dictinsertorder))
+    return newDict
+end, { { Name = 'self' } }, false, false)
+dictClass.dref.dictdata['clear'] = defFunction(function (self)
+    self.dictdata = {}
+    self.dictinsertorder = {}
+end, { { Name = 'self' } }, false, false)
+dictClass.dref.dictdata['__ior__'] = defFunction(function (self, other)
+    for i, v in pairs(other.dictdata) do
+        if v ~= nil then
+            if self.dictdata[i] == nil then
+                table.insert(self.dictinsertorder, i)
             end
+            self.dictdata[i] = v
         end
-        return trueBool
-    end, { { Name = 'self' }, { Name = 'other' } }, false, false),
-    -- values = nil,
-    __ror__ = defFunction(function (self, other)
-        local call = int_getattribute_implicit(int_type(other), '__or__')
-        return int_custcall(call, other, self)
-    end, { { Name = 'self' }, { Name = 'other'} }, false, false),
-    -- __reduce_ex__
-    -- __reversed__
-    -- __reduce__
-    setdefault = defFunction(function (self, keyname, value)
-        local s = int_getrawstring(keyname)
-        if self.dictdata[s] == nil then -- Add the value via __setitem__
-            local call = int_getattribute_implicit(int_type(self), '__setitem__')
-            int_custcall(call, keyname, value)
-        end
-    end, { { Name = 'self' }, { Name = 'keyname' }, { Name = 'value', Default = noneClass } }, false, false),
-    __getitem__ = defFunction(function (self, key)
-        local s = int_getrawstring(key)
-        local val = self.dictdata[s]
-        if val == nil then error('TODO') end
-        return val
-    end, { { Name = 'self' }, { Name = 'key' } }, false, false),
-    --[[ update = defFunction(function ()
-        
-    end, { { Name = 'iterable' } }) ]]
-    -- __subclasshook__
-    get = defFunction(function (self, keyname, default_value)
-        local s = int_getrawstring(keyname)
-        local val = self.dictdata[s]
-        if val == nil then return default_value end
-        return val
-    end, { { Name = 'self'}, { Name = 'keyname' }, { Name = 'value', Default = noneClass } }, false, false),
-    -- keys
-    copy = defFunction(function (self)
-        local newDict = int_custcall(int_type(self))
-        for i, v in pairs(self.dictdata) do
-            newDict.dictdata[i] = v
-        end
-        newDict.dictinsertorder = table.pack(table.unpack(self.dictinsertorder))
-        return newDict
-    end, { { Name = 'self' } }, false, false),
-    clear = defFunction(function (self)
-        self.dictdata = {}
-        self.dictinsertorder = {}
-    end, { { Name = 'self' } }, false, false),
-    -- __doc__ TODO
-    __ior__ = defFunction(function (self, other)
-        for i, v in pairs(other.dictdata) do
-            if v ~= nil then
-                if self.dictdata[i] == nil then
-                    table.insert(self.dictinsertorder, i)
-                end
-                self.dictdata[i] = v
-            end
-        end
-        return self
-    end, { { Name = 'self' }, { Name = 'other' } }, false, false),
-    -- items 
-    --__str__ = nil, 
-    __class__ = typeClass,
-    -- __getstate__ = 
-    --__repr__ = nil
-}
+    end
+    return self
+end, { { Name = 'self' }, { Name = 'other' } }, false, false)
+-- dictClass.dref.dictdata['__class_getitem__']
+-- dictClass.dref.dictdata['fromkeys']
+-- dictClass.dref.dictdata['keys']
+-- dictClass.dref.dictdata['__new__']
+-- dictClass.dref.dictdata['__repr__']
+-- dictClass.dref.dictdata['__doc__']
+-- dictClass.dref.dictdata['__reversed__']
+-- dictClass.dref.dictdata['items']
+-- dictClass.dref.dictdata['values']
+-- dictClass.dref.dictdata['update']
+-- dictClass.dref.dictdata['__hash__']
+-- dictClass.dref.dictdata['__getattribute__']
+-- dictClass.dref.dictdata['__lt__']
+-- dictClass.dref.dictdata['__le__']
+-- dictClass.dref.dictdata['__ne__']
+-- dictClass.dref.dictdata['__gt__']
+-- dictClass.dref.dictdata['__ge__']
+-- dictClass.dref.dictdata['__sizeof__']
+
 
 -- Builtins:
 -- dict_keys(['__name__', '__doc__', '__package__', '__loader__', '__spec__', '__build_class__', '__import__', 'abs', 'all', 'any', 'ascii', 'bin', 'breakpoint', 'callable', 'chr', 'compile', 'delattr', 'dir', 'divmod', 'eval', 'exec', 'format', 'getattr', 'globals', 'hasattr', 'hash', 'hex', 'id', 'input', 'isinstance', 'issubclass', 'iter', 'aiter', 'len', 'locals', 'max', 'min', 'next', 'anext', 'oct', 'ord', 'pow', 'print', 'repr', 'round', 'setattr', 'sorted', 'sum', 'vars', 'None', 'Ellipsis', 'NotImplemented', 'False', 'True', 'bool', 'memoryview', 'bytearray', 'bytes', 'classmethod', 'complex', 'dict', 'enumerate', 'filter', 'float', 'frozenset', 'property', 'int', 'list', 'map', 'object', 'range', 'reversed', 'set', 'slice', 'staticmethod', 'str', 'super', 'tuple', 'type', 'zip', '__debug__', 'BaseException', 'BaseExceptionGroup', 'Exception', 'GeneratorExit', 'KeyboardInterrupt', 'SystemExit', 'ArithmeticError', 'AssertionError', 'AttributeError', 'BufferError', 'EOFError', 'ImportError', 'LookupError', 'MemoryError', 'NameError', 'OSError', 'ReferenceError', 'RuntimeError', 'StopAsyncIteration', 'StopIteration', 'SyntaxError', 'SystemError', 'TypeError', 'ValueError', 'Warning', 'FloatingPointError', 'OverflowError', 'ZeroDivisionError', 'BytesWarning', 'DeprecationWarning', 'EncodingWarning', 'FutureWarning', 'ImportWarning', 'PendingDeprecationWarning', 'ResourceWarning', 'RuntimeWarning', 'SyntaxWarning', 'UnicodeWarning', 'UserWarning', 'BlockingIOError', 'ChildProcessError', 'ConnectionError', 'FileExistsError', 'FileNotFoundError', 'InterruptedError', 'IsADirectoryError', 'NotADirectoryError', 'PermissionError', 'ProcessLookupError', 'TimeoutError', 'IndentationError', 'IndexError', 'KeyError', 'ModuleNotFoundError', 'NotImplementedError', 'RecursionError', 'UnboundLocalError', 'UnicodeError', 'BrokenPipeError', 'ConnectionAbortedError', 'ConnectionRefusedError', 'ConnectionResetError', 'TabError', 'UnicodeDecodeError', 'UnicodeEncodeError', 'UnicodeTranslateError', 'ExceptionGroup', 'EnvironmentError', 'IOError', 'open', 'quit', 'exit', 'copyright', 'credits', 'license', 'help'])
 
 -- TODO: docstrings
 -- TODO: Base, class fetching?
-
+-- TODO: Module-level __getattr__, __dir__
 -- TODO
 local getOrErr = function (name, str_name, isLocal) -- DEVIATION: Unfortunately that's not the literal translation. Python has many error types here basing on the context but those are the base ones
     if name == nil then
