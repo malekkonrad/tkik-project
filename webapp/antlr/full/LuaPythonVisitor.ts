@@ -1644,7 +1644,8 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         if (lambdef != null) return this.visit(lambdef)
         
         const expr = ctx.expression()
-        if (expr != null) return `shortHandIf(${this.visit(ctx.getChild(2))}, ${this.visit(ctx.getChild(0))}, ${this.visit(expr)})`
+        // TODO: This should respect errors
+        if (expr != null) return `(function () if ${this.visit(ctx.getChild(2))} then return ${this.visit(ctx.getChild(0))} else return ${this.visit(expr)} end)()`
         return this.visit(ctx.getChild(0))
     }
     /*
