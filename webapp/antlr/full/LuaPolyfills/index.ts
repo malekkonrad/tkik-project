@@ -1,12 +1,3 @@
-// TODO: __globals__
-// __doc__
-// __name__
-// __qualname__
-// __module__
-// __defaults__
-// __dict__
-// __kwdefaults__
-
 // TODO: Methods!!!
 // __self__ - instance if method is bound
 // __func__ - original function object
@@ -393,7 +384,7 @@ setmetatable(list, {
             end,
             __len__ = function () return #inst._data end;
             __bool__ = function () return true end;
-            __getitem__ = function (i) return inst._data[i - 1] end;
+            __getitem__ = function (i) return inst._data[i + 1] end;
             __contains__ = function (i)
                 for _, v in ipairs(inst._data) do
                     if i == v then return true end
