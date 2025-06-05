@@ -637,7 +637,7 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
             const txtName = this.visit(name)
             // Find the first applicable scope
             let nameDefinition = undefined
-            for (let i = this.scopeStack.length - 2; i > 0; ++i) {
+            for (let i = this.scopeStack.length - 2; i > 0; --i) {
                 const scopeDefinition = this.scopeStack[i].getDefinition(txtName)
                 if (scopeDefinition != null) {
                     nameDefinition = scopeDefinition
