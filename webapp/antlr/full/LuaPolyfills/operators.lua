@@ -1,4 +1,4 @@
-const operators_polyfill = `
+
 -- src: https://docs.python.org/3/reference/datamodel.html
 -- TODO: Add None Type
 -- TODO Add NotImplemented type (& Error potentially)
@@ -26,13 +26,15 @@ end, { { Name = "s" } }, false, false)
 -- __reversed__ -- used by reversed() to return reversed iterator [if not implemented it uses __len__() and __getitem__(_)]
 -- __contains__ - used by contain operator (if does not exist it uses __iter and then __getitem__)
 
+
+local int_isinstance = function(obj, class)
+
+end
+
 local int_operator_lt = function (a, b)
 
 end
 local int_operator_le = function (a, b)
-
-end
-local int_operator_eq = function (a, b)
 
 end
 local int_operator_ne = function (a, b)
@@ -46,10 +48,6 @@ local int_operator_gt = function (a, b)
 end
 
 local int_operator_not = function (obj)
-
-end
-
-local int_operator_truth = function (obj)
 
 end
 
@@ -282,6 +280,3 @@ end
 -- __await__
 
 -- TODO: 3.4 Coroutines
-
-`
-export default operators_polyfill

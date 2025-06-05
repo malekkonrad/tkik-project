@@ -251,8 +251,25 @@ local strClass = int_createobject(typeClass)
 strClass.base = objectClass
 
 -- Exception
-local baseexceptionClass = int_createobject(typeClass)
+local baseexceptionClass = int_createobject(typeClass, true)
 baseexceptionClass.base = objectClass
+baseexceptionClass.dref.dictdata['__init__'] = defFunction(function (self, txt)
+    self.errortxt = txt
+end, { { Name = 'self' }, { Name = 'txt', Default = None } }, false, false)
+-- baseexceptionClass.dref.dictdata['__new__']
+-- baseexceptionClass.dref.dictdata['__cause__']
+-- baseexceptionClass.dref.dictdata['__repr__']
+-- baseexceptionClass.dref.dictdata['__str__']
+-- baseexceptionClass.dref.dictdata['__getattribute__']
+-- baseexceptionClass.dref.dictdata['with_traceback']
+-- baseexceptionClass.dref.dictdata['add_note']
+-- baseexceptionClass.dref.dictdata['__setstate__']
+-- baseexceptionClass.dref.dictdata['args']
+-- baseexceptionClass.dref.dictdata['__traceback__']
+-- baseexceptionClass.dref.dictdata['__suppress_context__']
+-- baseexceptionClass.dref.dictdata['__context__']
+-- baseexceptionClass.dref.dictdata['__reduce__']
+-- baseexceptionClass.dref.dictdata['__doc__']
 
 -- Internal operators
 local int_directcall = function (fobj, ...)
@@ -312,10 +329,10 @@ int_getattribute_implicit = function (t, attr)
     end
 end
 
-local functionClass = {
-
---[[
-  local attr = int_type(a).__getattribute__(b)
+local methodwrapperClass = int_createobject(typeClass, true)
+methodwrapperClass.base = objectClass
+local functionClass = int_createobject(typeClass, true)
+functionClass.base = objectClass
   if not attr then
 
   end
