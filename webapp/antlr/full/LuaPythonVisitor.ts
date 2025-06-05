@@ -2076,6 +2076,12 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
     | (slice | starred_expression) (',' (slice | starred_expression))* ','?;
     */
     visitSlices(ctx: SlicesContext): string {
+        // WILL NEED TO ADD table.unpack to starred_expression to support that correctly
+        const slice_list = ctx.slice_list()
+        if (ctx.getChildCount() > 1) { // Tuple
+            return `` // TODO
+        }
+        return this.visit(slice_list[0])
         return 'TODO slices' // TODO
     }
     /*
@@ -2087,6 +2093,9 @@ export default class LuaPythonVisitor extends ParseTreeVisitor<string> implement
         const named_expr = ctx.named_expression()
         if (named_expr != null) return this.visit(named_expr)
         const expression_list = ctx.expression_list()
+        if (expression_list != null) { // slice type is created
+            return this.visit(expression_list[0]) // TODO:
+        }
         return 'TODO'
     }
     /*
